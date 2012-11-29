@@ -1,0 +1,70 @@
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+
+% The comment above tells emacs that this file is the only file in
+% this LaTeX project.
+
+\documentclass{article}
+
+% The following lines import a bunch of libraries that are useful if
+% you do the kinds of maths I do.
+
+\usepackage{cancel}
+
+\begin{document}
+
+\title{Pony - A Language for Truly Concurrent Computation}
+
+\author{Michael Thorpe}
+
+\maketitle
+
+\begin{abstract}
+Concurrency is hard, really hard to get right. Shared resources require semaphores, locking and monitors which are very easy to get wrong and even these protections introduce race conditions. Even Actor-Model languages have some of the same problems, other actors can modify data and can still have data contention.
+
+In my masters project I will focus on designing and creating a new programming language that will introduce a new kind of type system, determining mutability, immutability and uniqueness. This language will treat actors as first class members and will have several relatively unexplored features for a programming language, including no inheritance, a feature being called partial objects and ????
+\end{abstract}
+
+\section{Relevant Material}
+
+\subsection{Work related to Actor-Model Languages}
+
+\begin{itemize}
+	\item Erlang
+\end{itemize}
+
+\subsection{Work related to immutability}
+
+\begin{itemize}
+	\item Microsoft Paper
+	\item Scala/Odersky paper
+\end{itemize}
+
+\subsection{Work related to partial objects}
+
+\begin{itemize}
+	\item ????
+	\item Partial objects used to solve:
+		\begin{itemize}
+		\item Cloning
+		\item Reflection
+		\item Stringable
+		\item ?
+	\end{itemize}
+\end{itemize}
+
+\section{Acceptance}
+
+\subsection{Example code which should compile}
+
+\subsection{Best case scenario}
+
+\subsection{Expectations}
+
+\section{Challenges}
+
+\subsection{Here are some challenges}
+
+\end{document}
