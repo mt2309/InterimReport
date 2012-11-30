@@ -27,12 +27,21 @@ Concurrency is hard, really hard to get right. Shared resources require semaphor
 In my masters project I will focus on designing and creating a new programming language that will introduce a new kind of type system, determining mutability, immutability and uniqueness. This language will treat actors as first class members and will have several relatively unexplored features for a programming language, including no inheritance, a feature being called partial objects and ????
 \end{abstract}
 
+\section{Introduction}
+
+Brief explanation of:
+\begin{itemize}
+\item Partial objects
+\item Actor-Model Languages
+\end{itemize}
+
 \section{Relevant Material}
 
 \subsection{Work related to Actor-Model Languages}
 
 \begin{itemize}
-	\item Erlang
+	\item Erlang Paper
+	\item Various other papers
 \end{itemize}
 
 \subsection{Work related to immutability}
@@ -40,6 +49,7 @@ In my masters project I will focus on designing and creating a new programming l
 \begin{itemize}
 	\item Microsoft Paper
 	\item Scala/Odersky paper
+	\item One thats in the dropbox + fav'ed on my iPad
 \end{itemize}
 
 \subsection{Work related to partial objects}
@@ -53,18 +63,41 @@ In my masters project I will focus on designing and creating a new programming l
 		\item Stringable
 		\item ?
 	\end{itemize}
+	
 \end{itemize}
 
 \section{Acceptance}
 
-\subsection{Example code which should compile}
+\subsection{Code which should compile}
+
+Should include inferred mutability from the typesystem
+Use of partial objects
+Compiler should be able to bootstrap itself
+Some form of standard library, including primitive types (int, bool, string/char, array, vector) and file IO
 
 \subsection{Best case scenario}
 
+The best case scenario should have the compiler for the full Pony language, with an LLVM backend and a type system capable of correctly proving
+mutability.
+
+There would be a significant standard library, with collections, IO and maths support.
+
+The Pony compiler should be able to compile itself with no errors.
+
 \subsection{Expectations}
+
+I do not expect to succeed at all these goals, since that would be very ambitious. Instead I will focus on correctly implementing the mutability side of the type system, as this is an area of active research currently, with Microsoft having written several million lines of code in a C\# variant, mentioning this in a paper released in November.
+
+I would also like to have an implementation of Partial Objects, in order to demonstrate their power. For example implementing stringability via partial objects.
+
+The bootstrapping process should be easily extendable for incremental improvements to the compiler. 
 
 \section{Challenges}
 
-\subsection{Here are some challenges}
+\subsection{Infrastructure}
+
+In order to explore the interesting parts of this project, a fully working compiler needs to be constructed. This is obviously a large undertaking, and errors in the actual compiler could cause errors in the type system, making debugging considerably harder.
+
+The fact that this is a new programming language also means the tools are not very robust, the errors emitted by the compiler will be less clear and less verbose\footnote{And sometimes not even correct error messages!} than if the type system was written in a language with a wider support base than two or three people at Imperial College.
 
 \end{document}
