@@ -1,60 +1,221 @@
-%%% Local Variables: 
+%%% Local Variables:
 %%% mode: latex
 %%% TeX-master: t
-%%% End: 
+%%% End:
 
 % The comment above tells emacs that this file is the only file in
 % this LaTeX project.
 
 \documentclass{article}
 
-\usepackage{cancel}
-\usepackage{fixltx2e}
 \usepackage{amsmath}
 \usepackage{dot2texi}
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows}
+
+\usepackage{float}
+\floatstyle{boxed} 
+\restylefloat{figure}
 
 
 \begin{document}
 
 \title{Pony - A Language for Truly Concurrent Computation}
 
-\author{Michael Thorpe}
-
+\author{ 	Michael Thorpe\\
+		Imperial College London\\
+		michael.thorpe09@imperial.ac.uk}
 \maketitle
-
-\begin{abstract}
-Concurrency is hard, really hard to get right. Shared resources require semaphores, locking and monitors which are very easy to get wrong and even these protections introduce race conditions. Even Actor-Model languages have some of the same problems, other actors can modify data and can still have data contention.
-
-In my masters project I will focus on designing and creating a new programming language that will introduce a new kind of type system, determining mutability, immutability and uniqueness. This language will treat actors as first class members and will have several relatively unexplored features for a programming language, including no inheritance (but with traits to allow code reuse), a feature being called partial objects and referential immutability expressed in the type system.
-\end{abstract}
+\tableofcontents
 
 \section{Introduction}
 
-Brief explanation of:
+Concurrency is very hard to get right. Shared resources require
+semaphores, locking and monitors which are very easy to get wrong
+and even these protections can introduce race conditions. 
+Actor-Model languages have some of the same problems, other
+actors can modify data and can still have data contention.
+
+\subsection{The Actor-Model}
+
+Actors can be used to model large numbers of different concurrent processes in a
+logical and realistic manner, in which actors are a primitive in concurrency. In
+fact It can be seen as a continuation of OO message-passing, where objects exist
+on different threads. Actors have a mailbox and can send and receive messages,
+reacting to those messages in a variety of different ways. The idea behind the
+actor-model is that there is no global state, instead each actor has its own
+local state and can affect the state of other actors by sending them messages.
+
+\subsubsection{History}
+
+Actors were first introduced in 1973\cite{hewitt1973} and was inspired by
+physics and the real world (compared to other models for concurrency, which were
+based after mathematical models such as set theory. Several languages had
+previously such as Simula (1967) and Smalltalk (1971-72) had some of the first
+message passing semantics, but they were not designed for actors, but rather as
+part of their object-orientation.
+
+Actors became formally defined in 1973-1977, with Greif providing the
+operational semantics for actors\cite{grief1975} and Baker and Hewitt providing
+Laws for Actors\cite{hewitt1977}. However the actor-model did not (and
+indeed has not) gain much popularity, with Mackay\cite{mackay97} claiming that
+actors did not catch on because the conceptual model did not map very easily
+onto an efficient implementation, which developers at the time could use.
+
+\subsubsection{Erlang}
+
+In 1986, the Ericsson Computer Science Laboratory began the development of
+Erlang\cite{armstrong2007} (named after either Agner Krarup Erlang, a Danish
+mathematician, or ERicsson LANGuage, depending on who you ask). The Lab was
+tasked with "providing a better way of programming telephony applications", in
+the 80s telephony requirements were atypical to those of other industries,
+needing to be very concurrent (handling thousands and thousands of calls at
+once), but these processes can be very lightweight and each one requires very
+little work. It was also a requirement that the system being very tolerant of
+faults and allow on-the-fly upgrades without system downtime. It turns out all
+of these requirements map very easily and effectively onto the actor-model.
+
+Erlang is now used across industry for so called "soft real-time" programming,
+in many different areas, including (but not limited to) telecoms (at T-Mobile,
+Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat,
+Trading (Goldman Sachs and Smarkets) and game servers (Call of Duty and
+Battlestar Galactica).
+
+Erlang has a very different syntax to most other programming languages, taking
+inspiration from Prolog (and in fact the original Erlang interpreter was written in
+Prolog), which has been a reason for its low popularity.
+
+\begin{figure}[H]
+\begin{verbatim}
+module(area).-export([loop/1]).
+loop(Tot) ->    receive        {Pid, {square, X}} ->            Pid ! X*X,            loop(Tot + X*X);        {Pid, {rectangle,[X,Y]}} ->            Pid ! X*Y,            loop(Tot + X*Y);        {Pid, areas} ->end.
+\end{verbatim}
+\caption{Area calculator server in Erlang}
+\label{fig:example_erlang_server}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+Pid = spawn(fun() -> area:loop(0) end),Pid ! {self(), {square, 10}},    receive        Area -> 
+        ...end.
+\end{verbatim}
+\caption{Area calculator server in Erlang}
+\label{fig:example_erlang_client}
+\end{figure}
+
+Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show
+some example code Erlang code, showing some very different syntax and semantic
+to what programmers usually expect.
+
+\subsubsection{Concurrency Orientated Programming}
+Concurrency Orientated Programming\cite{armstrong2007} (or COP) is a programming paradigm that 
+states that the design of a program should be based on concurrency patterns
+inherent in the problem. The main ideas behind COP are:
+\begin{itemize}
+\item Systems are built from processes
+\item Process share nothing by default
+\item Process interact by sending and receiving asynchronous messages
+\item Processes are isolated.
+\end{itemize}
+
+Actors fit perfectly into this paradigm, meeting all of the requirements. Sharing immutable data
+between processes is fine, since this can be seen as each process having its own, separate
+copy of the data.
+
+\subsubsection{State of the Art}
+
+There are two popular languages involved in the active development of actors -
+Erlang and Scala (a JVM-based language), as well as several others (such as F\#,
+C++, D and Rust). Erlang is dynamically typed, runs on its own virtual machine
+with its own eco-system, whereas Scala runs on top of the JVM with the ecosystem
+and high level support that provides.
+
+Both Scala and Erlang have their own implementation of actors, but the semantics
+of both are more or less the same, but there are some differences. For example
+in Erlang, multiple processes in the same VM can easily share the same data
+because the language will guarantee this data is immutable. In Scala this is not
+possible, since you can easily send a mutable reference to another actor - which
+can easily lead to race conditions. Scala is a type-safe language, meaning that
+code is much easier to error-check, whereas Erlang has only limited type-safety.
+
+Actors can communicate locally (i.e. running on the same machine) and message
+passing is all but guaranteed, baring Out-Of-Memory errors, or they can communicate
+over a network, and if you place any trust in TCP/IP, messages will be delivered
+
+Pony attempts to take the best parts to these two approaches, with some
+additional advantages.
+
 \subsection{Pony}
 
-Pony is a high level, imperative, object orientated, single-dispatch language, statically-typed actor-model programming language.
+In my masters project I will focus on designing and creating a new programming
+language that will introduce a new kind of type system, determining mutability,
+immutability and uniqueness. This language will treat actors as first class
+members and will have several relatively unexplored features for a programming
+language, including no inheritance (but with traits to allow code reuse), a
+feature being called partial objects and referential immutability expressed in
+the type system.
 
-The problem of a lack of inheritance, which causes code duplication is solved with Scala-style traits/Ruby-style mixing. This means that types are composed rather than having a type hierarchy. Pony has a separate type-like system for handling referential immutability, which does have a hierarchy:
+Pony is a high level, imperative, object orientated, functional, single-dispatch
+language, statically-typed actor-model programming language. It is a "pure"
+object-orientated language in that every value is an object. It is a functional
+language in that every function is a value, with Algebraic Datatypes as first
+class members of the language. It is strongly typed, with local type-inference.
 
-\begin{dot2tex}[dot,options=-tmath]
-digraph Immutability {
-  unique    -> immutable 	-> readonly;
-  unique    -> mutable 	-> readonly;
-}
-\end{dot2tex}
+There is no class inheritance, which can cause code duplication, in Pony this
+problem is solved with Scala-style traits/Ruby-style mixins. This means that
+types are composed\footnote{by mixing in multiple traits} rather than having a
+type hierarchy. Pony has a separate type-like system for handling referential
+immutability, which does have a hierarchy.
 
-The "mode" of a parameter (which can be seen as comparable to a file reading mode - read, write etc) dictates what can be done to that object. Objects can be upcast the hierarchy (i.e. $unique \to mutable$) without problem. However down casting is not permitted, as this could violate readability constraints. These modes will be discussed later in section~\ref{sec:immutability}
+The syntax of Pony takes inspiration from languages such as Scala and Lua, with
+C style bracing and semi-colons. The grammar is still not fixed, with
+discussions on the language, grammar and semantics still on-going.
 
+\begin{figure}[H]
+\begin{verbatim}
+  object Runnable {
+    function main(args:Array[String]) {
+      for arg in args {
+      	println(args);
+      }
+    }
+  }
+\end{verbatim}
+\caption{Example Pony program}
+\label{fig:simple}
+\end{figure}
+
+This is a sample Pony program which simply prints its arguments, one per line.
+In this example several properties about  Pony become visible, objects are
+singleton classes (similar to object classes in Scala). We also see an example
+of a for-comprehension - similar to a $for$ loop in Java, C\# or C, but with a
+more expressive syntax.
+
+\subsection{Cloning, Serialisation and Stringable}
+
+\subsubsection{Current Solutions to Object Cloning}
+
+More research needed
+
+\subsubsection{Current Solutions to Serialisation}
+
+More research needed
+
+\subsubsection{Current Solutions to Stringability}
+
+More research needed
 
 \subsection{Partial objects}
 
-Partial objects are a unique feature of Pony and are a never before seen concept. They are not created by the user, but automatically generated by the compiler. For the rest of this paper, I will express a partial object of type $\displaystyle T$ as $\displaystyle\backslash T$
+Partial objects are a unique feature of Pony and are a new concept. They are not
+created by the user, but automatically generated by the compiler. For the rest
+of this paper, I will express a partial object of type $T$
+as $\backslash T$
 
-For a class $\displaystyle T$, with fields $\displaystyle T_{1}, T_{2}, \dots , T_{n}$ we define a partial object $\displaystyle\backslash T$ as:
+For a class $T$, with fields $T_{1}, T_{2}, \dots , T_{n}$ we define a partial
+object $\backslash T$ as:
 
+\begin{figure}[H]
 \begin{align*}
 \backslash T  = \{\\
 	\backslash T_{1} \to T_{1} \| \backslash T_{1} \| undefined\\
@@ -63,9 +224,18 @@ For a class $\displaystyle T$, with fields $\displaystyle T_{1}, T_{2}, \dots , 
 	\backslash T_{n} \to T_{n} \| \backslash T_{n} \| undefined\\
 \}
 \end{align*}
+\caption{Formal Representation of Partial Objects}
+\end{figure}
 
-That is, each field in $T$, the field can be $T_{n}$, $\backslash T_{n}$ (so a partial $T_{n}$) or $undefined$ (the field doesn't exist). The potential for this is difficult to see, but the applications for the developer will become apparent. This simple concept can be shown to easily solve problems such as cloning, serialisation, toString. For now we will get a partial object by calling $reflect(this,pattern?)$ where $pattern$ is optional and specifies what fields are to be transformed on $object$ (the default being all public fields?).
+That is, each field in $T$, the field can be $T_{n}$, $\backslash T_{n}$ (so a
+partial $T_{n}$) or $undefined$ (the field doesn't exist). The potential for
+this is difficult to see, but the advantages for the developer will become
+apparent. This simple concept can be shown to easily solve problems such as
+cloning, serialisation, Stringability. For now we will get a partial object by
+calling $reflect(this,pattern)$ where $pattern$ is optional and specifies what
+fields are to be transformed on $object$ (the default being all public fields).
 
+\begin{figure}[H]
 \begin{verbatim}
     function toString()->(r:String) {
         var x:String = "";
@@ -81,91 +251,246 @@ That is, each field in $T$, the field can be $T_{n}$, $\backslash T_{n}$ (so a p
         r = x;
     }
 \end{verbatim}
+\caption{Example usage of partial objects}
+\label{fig:partialobj}
+\end{figure}
 
-In the code above we can see some of the syntax and ideas of Pony, as well as the power of partial objects.
+In the code above we can see some more of the syntax and ideas of Pony, as well
+as the power of partial objects.
 
-\begin{verbatim}
-    
-\end{verbatim}
-
-\subsection{Actor-Model Languages}
 \subsection{Reference Immutability}
 \label{sec:immutability}
-
-\section{Relevant Material}
-
-\subsection{Work related to Actor-Model Languages}
+An object can possess one of four qualifiers\cite{microsoft2012}
 
 \begin{itemize}
-	\item Erlang Paper
-	\item Various other papers
+	\item Mutable - your "standard" reference to an object - mutation of the object
+	is allowed. The object can refer to any other kind of qualifier with no restrictions.
+	\item Read-only - a read-only reference to an object, allowing for no mutation.
+	There is an additional restriction on read-only values, in that traversing the heap
+	through a read-only reference will only ever produce non-mutable references
+	\item Immutable - a read-only object with a further restriction in that no other
+	references to that object are able to mutate that object.
+	\item Unique - an external reference to a cluster of externally unique references -- REPHRASE
 \end{itemize}
 
-\subsection{Work related to immutability}
+The "mode" of a parameter (which can be seen as comparable to a file reading
+mode - read, write etc) dictates what can be done to that object. Objects can be
+upcast the hierarchy (i.e. $unique \to mutable$) without problem. However down
+casting is not permitted, as this could violate readability constraints.
 
-\begin{itemize}
-	\item Microsoft Paper
-	\item Scala/Odersky paper
-	\item One thats in the dropbox + fav'ed on my iPad
-\end{itemize}
+\begin{figure}[H]
+\begin{dot2tex}[dot,options=-tmath]
+digraph Immutability {
+  unique    -> immutable 	-> readonly;
+  unique    -> mutable 	-> readonly;
+}
+\end{dot2tex}
+\caption{Mode Hierarchy}
+\label{fig:mode-hierarchy}
+\end{figure}
 
-\subsection{Work related to partial objects}
+Pony should provide a simple syntax for describing these modes and by inferring
+the mode of objects whenever possible. For now the syntax for modes is as follows:
+readonly - no notation (being the default),  mutable - ~ (think ~> for heap mutation),
+immutable - @ and unique - !
 
-\begin{itemize}
-	\item ????
-	\item Partial objects used to solve:
+Conversions to and from unique should be possible, since uniqueness does not
+fit into the hierarchy in the purest sense. Since unique references are only accessible
+from a single thread, they can become mutable. They can also be converted to
+immutable, since a single thread holds a reference the decision to treat the object
+cluster as immutable is localised.
+
+Conversion to mutable:
+\begin{figure}[H]
+\begin{verbatim}
+    var x! = new Array(....);
+    // ...
+    x(0) = ...; // x converted to mutable
+\end{verbatim}
+\caption{Conversion to mutable}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+    var x! = new Array(...);
+    var y@ = l; // x implicitly converted to immutable
+    x(0) = ...; // x is now immutable, so compilation error
+\end{verbatim}
+\caption{Conversion to immutable}
+\end{figure}
+
+We can also recover uniqueness from a conversion to mutable/immutable, inside the body of
+a function, as the conversion does not mean we permanently lose the information
+
+\begin{figure}[H]
+\begin{verbatim}
+    function double(x:Int!)->(y:Int!) {
+        // make x mutable
+        x = x*2;
+        // y can be safely converted to unique 
+        // since there is only one reference left at
+        // the function exit point - y
+        y = x;
+    }
+\end{verbatim}
+\caption{Conversion to and from unique}
+\end{figure}
+
+This ability is very useful, since it means we can easily parallelise destructive operations on 
+collections of unique objects, as each process can violate the uniqueness constraint, do the
+operation and return the unique reference.
+
+\section{Project Plan}
+
+\subsection{Investigation}
+The first step of the project will need to be an investigation into the design of programming
+languages, what features would be useful, what style of code people want to write in the
+language. An investigation into LLVM and the Intermediate Form it uses will also be necessary.
+
+\subsection{Design}
+The next step will be to design the Pony language and decide on an initial,
+concrete syntax for the language (the operational semantics for the language having 
+already been formalised). The specification should comprise a grammar in EBNF, along
+with a description of the semantics of the language.
+\subsection{Implementation}
+The implementation side of the project will be formed of several parts once a specification is formalised.
+
+\begin{enumerate}
+	\item Write initial test code in Pony that should be compiled.
+	\item Pony compiler for a small subset of the language written in a native language
+	(such as C++) with error handling for features included
 		\begin{itemize}
-		\item Cloning
-		\item Reflection
-		\item Stringable
-		\item ?
-	\end{itemize}
-	
-\end{itemize}
+			\item Lexing and Parsing of the full language, which means we can use all of the
+			C++ debugging tools available to us to debug the parser, which will need to be 
+			handrolled (as there will be no parser generator for Pony). This also means we
+			can easily port the C++ code to Pony and require no maintenance once implemented
+			\item Object orientated features, such as classes, traits and objects.
+			\item Minimal type checking, with no inference
+			\item No partial objects
+			\item At this point we will not consider mutability in the type system at all, as this will
+			make the initial compiler easier (annotations will be supported, if they are not too difficult)
+			\item Output LLVM IR
+		\end{itemize}
+	\item An initial Pony compiler, written in Pony as a reimplementation of the C++ compiler, this will
+	serve as a test of the expressiveness of the language and let us determine what may need
+	to be added to the language.
+	\item Incremental improvements to the compiler, adding features such as partial objects, mutability
+	inference and optimisations based on mutability (for example, caching immutable values).
+\end{enumerate}
 
-\section{Acceptance}
-
-\subsection{Code which should compile}
-
-Should include inferred mutability from the typesystem
-Use of partial objects
-Compiler should be able to bootstrap itself
-Some form of standard library, including primitive types (int, bool, string/char, array, vector) and file IO
+\section{Evaluation Plan}
 
 \subsection{Best case scenario}
 
-The best case scenario should have the compiler for the full Pony language, with an LLVM backend and a type system capable of correctly proving
-mutability.
+The best case scenario should have the compiler for the full Pony language, with
+an LLVM backend and a type system capable of correctly proving mutability across
+a variety of different situations.
 
-There would be a significant standard library, with collections, IO and maths support.
+There would be a significant standard library, with collections, IO and maths
+support.
 
 The Pony compiler should be able to compile itself with no errors.
 
 \subsection{Expectations}
 
-I do not expect to succeed at all these goals, since that would be very ambitious. Instead I will focus on correctly implementing the mutability side of the type system, as this is an area of active research currently, with Microsoft having written several million lines of code in a C\# variant, mentioning this in a paper released in November.
+I do not expect to succeed at all these goals, since that would be far too
+ambitious.Instead I will focus on:
+\begin{itemize}
+\item Correctly implementing the mutability side of
+	the type system, as this is an area of active research currently, with
+	Microsoft	having written several million lines of code in a C\# variant,
+	mentioning this in a paper released in November\cite{microsoft2012}.
 
-I would also like to have an implementation of Partial Objects, in order to demonstrate their power. For example implementing stringability via partial objects.
+\item An implementation of Partial Objects, in order to demonstrate their 
+	usefulness. For example implementing stringability via partial objects
+	would be a (relatively) straightforward effort, subject to time available.
 
-The bootstrapping process should be easily extendable for incremental improvements to the compiler. 
+\item The bootstrapping process should be easily extendable for incremental
+	 improvements to the compiler.
+\end{itemize}
+
+\subsection{Code which should compile}
+
+\begin{itemize}
+
+\item Simple code - the example in figure \ref{fig:simple} should compile.
+\item Use of partial objects - the example seen in figure \ref{fig:partialobj} should compile
+with no errors.
+
+\item Should include inferred mutability from the type system
+
+\begin{figure}
+\begin{verbatim}
+actor receiver {
+  function receive(x)->(Unit) {
+    match x on type {
+      case buf as Buffer {
+        buf.append(4);
+      }
+    }
+  }
+}
+
+object main {
+  var x = new receiver;
+  var buf = new Buffer(1,2,3);
+  actor_send(x,buf);
+  buf.empty();
+}
+\end{verbatim}
+\caption{Example of Inferred Mutability}
+\end{figure}
+
+This code should fail to compile, since $buf$ cannot be mutable (as you can only
+send immutable or unique messages) and cannot be unique, immutable or read-only
+(as $main$ empties the buffer after it is sent). At this point the compiler should
+introduce a warning/error to the developer.
+
+\item Compiler should be able to bootstrap itself (ie the Pony compiler should be able
+to compile the compiler once it is written in Pony).
+
+\item Some form of standard library, including primitive types (int, bool,
+char, string, array, vector) and file IO, the parts necessary for writing a
+compiler essentially. This means that the compiler can be fully self-hosting,
+with the only dependency being LLVM and a C++ compiler.
+\end{itemize}
 
 \section{Challenges}
 
 \subsection{Infrastructure}
 
-In order to explore the interesting parts of this project, a fully working compiler needs to be constructed. This is obviously a large undertaking, and errors in the actual compiler could cause errors in the type system, making debugging considerably harder.
+In order to explore the interesting parts of this project, a fully working
+compiler needs to be constructed. This is obviously a large undertaking, and
+errors in the actual compiler could cause errors in the type system, making
+debugging considerably harder.
 
-The fact that this is a new programming language also means the tools are not very robust, the errors emitted by the compiler will be less clear and less verbose\footnote{And sometimes not even correct error messages!} than if the type system was written in a language with a wider support base than two or three people at Imperial College.
+The fact that this is a new programming language also means the tools are not
+very robust, the errors emitted by the compiler will be less clear and less
+verbose\footnote{And sometimes not even correct error messages!} than if the
+type system was written in a language with a wider support base of two or
+three people at Imperial College London.
 
 \subsection{Technical Challenges}
 
-Problems that might arise directly related to the type system:
+Problems that might arise directly related to the modal-type system
 	\begin{itemize}
-		\item How to interoperate with other LLVM code. For example using OpenGL C++ API should we consider all return values to be mutable? 
-		\item Allowing casting. Should we allow an implicit conversion from unique -> mutable/immutable. Are there any problems related to this?
-		\item Generic mode types - what is the most useful and readable manner of representing generic modes and how should they be treated in the type system.
+		\item How to interoperate with other LLVM code. For example using if a
+		developer was using OpenGL LLVM API should we consider all return
+		values to be mutable? Or should we require users to provide wrappers
+		to the external code, annotating as appropriate.
+		\item Allowing casting. Should we allow an implicit conversion from unique
+    $\to$ mutable/immutable. Will there any problems related to this?
+		\item Generic mode types - what is the most useful and readable manner of
+		representing generic modes and how should they be treated in the type system.
 	\end{itemize}
 
+Access to the runtime, which provides GC and the actor framework will not be
+available due to proprietary licensing. This means that there is no memory
+management in the language at all - programs will continue to use memory until they
+terminate or until the PC has exhausted all resources. It also means that there will be
+no actors, which will be disappointing, since this is a primary feature of the language.
+
+\bibliographystyle{plain}
+\bibliography{InterimReport}
+
 \end{document}
-
-
