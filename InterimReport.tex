@@ -12,6 +12,7 @@
 \usepackage{amssymb}
 \usepackage{dot2texi}
 \usepackage{tikz}
+\usepackage{hyperref}
 \usetikzlibrary{shapes,arrows}
 
 \usepackage{float}
@@ -37,7 +38,7 @@ and even these protections can introduce race conditions.
 The Actor-Model can have some of the same problems - actors
 can modify shared data and introduce data contention.
 For my project I will investigate, design and implement an actor-model
-programming language which will fix these problems.
+programming language, called Pony, which will fix these problems.
 
 \subsection{The Actor-Model}
 
@@ -49,7 +50,7 @@ and can react to those messages in a variety of different ways. The idea behind
 the actor-model is that there is no global state, instead each actor has its own
 local state and can affect the state of other actors by sending them messages.
 
-In their thesis, Agha\cite{agha1985} stated that actors can:
+In his thesis, Agha\cite{agha1985} stated that actors can:
 \begin{enumerate}
 \item Send a finite number of asynchronous, buffered messages to other actors,
 with guaranteed delivery but no ordering guarantees.
@@ -60,7 +61,7 @@ with guaranteed delivery but no ordering guarantees.
 \subsubsection{History}
 
 Actors were first introduced in 1973\cite{hewitt1973} and were inspired by
-physics and the by real world (compared to other models for concurrency, which
+physics and by the real world (compared to other models for concurrency, which
 were based on mathematical models such as set theory). Several languages, such
 as Simula (1967) and Smalltalk (1971-72), previously had some of the first
 message passing semantics, but they were not designed for actors, but rather as
@@ -70,7 +71,7 @@ than asynchronously.
 Actors became formally defined in 1973-1977, with Greif providing the
 operational semantics for actors\cite{grief1975} and Baker and Hewitt providing
 Laws for Actors\cite{hewitt1977}. However the actor-model did not (and
-indeed has not) gain much popularity, with Mackay\cite{mackay97} claiming that
+indeed has not) gained much popularity, with Mackay\cite{mackay97} claiming that
 actors did not catch on because the conceptual model did not map very easily
 onto an efficient implementation, which developers at the time could use.
 
@@ -87,7 +88,7 @@ of both being more or less the same, however there are some differences. For
 example in Erlang, multiple processes in the same VM\footnote{Virtual Machine}
 can easily share the same data because the language will guarantee this data is
 immutable. In Scala this is not possible, since you can easily send a mutable
-reference to another actor - which can easily lead to race conditions. Scala is
+reference to another actor - which can lead to race conditions. Scala is
 a type-safe language, meaning that code is much easier to error-check, whereas
 Erlang has only limited type-safety.
 
@@ -102,12 +103,12 @@ additional advantages.
 The join calculus is a process calculus, developed to formally model the design of
 distributed programming languages\cite{fournet1996}. It avoids some of the problems
 involved with the $\pi$ calculus\cite{milner1989}, which is mostly based on atomic
-non-local interactions, which are difficult to implement in a real system. Programming
+non-local interactions, and these are difficult to implement in a real system. Programming
 languages which use actors have separate mechanisms for transmission and
 synchronisation/locking.
 
 The calculus can be seen as an asynchronous version of the $\pi$ calculus, with
-several strong restrictions:
+several strong restrictions\cite{fournet1996}:
 \begin{enumerate}
 	\item Scope restriction, reception, and replicated reception are syntactically 
 		 merged into a single construct, called the definition
@@ -139,19 +140,54 @@ Actors fit perfectly into this paradigm, meeting all of the requirements.
 Sharing immutable data between processes is fine, since this can be seen as each
 process having its own, separate copy of the data.
 
+\subsection{Use Cases for the Actor-Model}
+
+The Actor-Model can be used to help model and reason about many different concurrent
+systems, for example:
+
+\begin{itemize}
+\item Web services with the endpoints as separate actors
+\item Email, with different accounts being different actors
+\item GUI programming, where the view, model and controller are separate actors
+	 each passing messages to each other.
+\end{itemize}
+
+An advantage of actors allow you to think about concurrency on a more abstract level
+than approaches such as locking.
+
 \subsection{Partial objects}
 
 \subsubsection{Current Solutions to Object Cloning}
 
-More research needed
+In Java, object cloning is achieved by implementing the $Cloneable$ interface
+\footnote{\url{http://download.oracle.com/javase/7/docs/api/java/lang/Cloneable.html}},
+which gives the class a $clone()$ method, which if no direct implementation is given,
+will do a "shallow copy" by copying all of the fields in the original object to the new object.
+
+If this method is overridden, the class provide its own mechanisms after calling $super.clone()$
+such as duplicating some fields, or creating a new unique-identifier.
+
+In C++, classes can define a copy constructor or the compiler will automatically generate
+one\cite{ansi:03:c++}, which specifies which fields to copy and in the case of the compiler generated
+version which will do a shallow copy of all of the fields. 
 
 \subsubsection{Current Solutions to Serialisation}
 
-More research needed
+In Java, serialisation is achieved automatically by implementing the $java.io.Serializable$
+\footnote{\url{http://docs.oracle.com/javase/7/docs/api/java/io/Serializable.html}} interface, which allows
+the saving or sending of an object and its contents. C and C++ do not have such easily utilisable
+methods in their standard libraries.
+
+In the .net framework, a class can become serialisable by adding the $Serializable$\footnote{
+\url{http://msdn.microsoft.com/en-us/library/ms973893.aspx}} attribute to the
+class, if (in the future) new members are added to the class, they can be tagged with the 
+$OptionalField$ attribute\footnote{\url{
+http://msdn.microsoft.com/en-us/library/system.runtime.serialization.optionalfieldattribute.aspx}},
+allowing older versions of the object in question to be deserialized without problem.
 
 \subsubsection{Current Solutions to Stringability}
 
-More research needed
+More research needed still
 
 \subsubsection{Partial Objects}
 
@@ -160,29 +196,23 @@ created by the user, but automatically generated by the compiler. For the rest
 of this paper, I will express a partial object of type $T$
 as $\backslash T$
 
-For a class $T$, with fields $T_{1}, T_{2}, \dots , T_{n}$ we define a partial
-object $\backslash T$ as:
-
 \begin{figure}[H]
-\begin{align*}
-\backslash T  = \{\\
-	\backslash T_{1} \to T_{1} \| \backslash T_{1} \| undefined\\
-	\backslash T_{2} \to T_{2} \| \backslash T_{2} \| undefined\\
-	\dots\\
-	\backslash T_{n} \to T_{n} \| \backslash T_{n} \| undefined\\
-\}
-\end{align*}
+$T = (fieldId \to type) \times (function \to signature)\\$
+$dom(T\downarrow_{1}) = \{ f_{1} \dots f_{n} \} \Rightarrow\\$
+$\> \exists \backslash T.dom(\backslash T\downarrow_{1}) = \{f_{1}^{'}\dots f_{n}^{'}\wedge
+\forall_{i\in 1\dots n}.\backslash T\downarrow_{1} \in \{T\downarrow_{f_{i}}, 
+\backslash(T\downarrow_{1}(f_{i}), undefined\}$
 \caption{Formal Representation of Partial Objects}
 \end{figure}
 
 That is, for each field in $T$, the field can be $T_{n}$, $\backslash T_{n}$ (so
 a partial $T_{n}$) or $undefined$ (the field doesn't exist). The potential for
 this is not immediately obvious, but the advantages for the developer will
-become apparent. This simple concept can be shown to easily solve problems such
-as cloning, serialisation and stringability. For now we will get a partial
-object by calling $reflect(pattern)$ where $pattern$ is optional and
-specifies what fields are to be returned on $this$ (the default being all public
-fields), with $this$ being passed implicitly.
+become apparent later on in the report. This simple concept can be shown
+to easily solve problems such as cloning, serialisation and stringability. For
+now we will get a partial object by calling $reflect(pattern)$ where $pattern$
+is optional and specifies what fields are to be returned on $this$ (the default
+being all public fields), with $this$ being passed implicitly.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -208,26 +238,30 @@ as the power of partial objects.
 
 \subsection{Modal References}
 \label{sec:immutability}
+
+Capabilities:
+
+
 An object can possess one of four qualifiers\cite{microsoft2012}
 
 \begin{itemize}
-	\item Mutable - your "standard" reference to an object - mutation of the
+	\item Mutable - the "standard" reference to an object - mutation of the
     object is allowed. The object can refer to any other kind of qualifier with
     no restrictions.
 	\item Read-only - a read-only reference to an object, allowing for no
     mutation. There is an additional restriction on read-only values, in that
-    traversing the heap	through a read-only reference will only ever produce
+    traversing the heap through a read-only reference will only ever produce
     non-mutable references
 	\item Immutable - a read-only object with a further restriction in that no
-    other references to that object are able to mutate that object.
+    other references to that object are able to mutate it.
 	\item Unique - an external reference to a cluster of externally unique
     references -- REPHRASE
 \end{itemize}
 
 The "mode" of a reference (which can be seen as comparable to a file reading
 mode - read, write etc) dictates what can be done to that object. Objects can be
-upcast the hierarchy (i.e. $unique \to mutable$) without problem. However down
-casting is not permitted, as this violates capability constraints.
+upcast the hierarchy (i.e. $unique \to mutable$) without problem. However 
+downcasting is not permitted, as this violates capability constraints.
 
 \begin{figure}[H]
 \begin{center}
@@ -247,7 +281,7 @@ digraph Immutability {
 
 Pony will provide a simple syntax for describing these modes and will infer
 the mode of references whenever possible. For now the syntax for modes is as
-follows: readonly - no notation (being the default),  mutable - ~ (think 
+follows: readonly - no notation (being the default),  mutable - \textasciitilde (think 
 $\rightsquigarrow$ for heap mutation), immutable - ! and unique - @
 
 Conversions to and from unique should be possible, since uniqueness does not
@@ -256,7 +290,6 @@ accessible from a single thread, they can become mutable. They can also be
 converted to immutable, since a single thread holds a reference the decision to
 treat the object cluster as immutable is localised.
 
-Conversion to mutable:
 \begin{figure}[H]
 \begin{verbatim}
     var x@ = new Array(....);
@@ -301,11 +334,11 @@ reference.
 \subsection{Alternatives to Modal References}
 
 There are alternatives to using modal references for making concurrency safer,
-which have their own advantages and disadvantages.
+which have their own advantages and disadvantages, as discussed below.
 
 \subsubsection{Ownership Types}
 
-Ownership types, first described by\cite{clarke1998}, are an attempt to prevent aliasing-based
+Ownership types, first described by Clarke\cite{clarke1998}, are an attempt to prevent aliasing-based
 failures of encapsulation.
 
 \begin{figure}[H]
@@ -325,13 +358,13 @@ failures of encapsulation.
 In fig \ref{fig:encapsulation}, encapsulation has been violated, the receiver is
 free to modify $list$ in whatever way it likes.
 
-Ownership types can be seen as a kind of dependent typing, enforcing
+Ownership types can be seen as a form of dependent typing, enforcing
 several properties about an object:
 
 \begin{itemize}
 \item Every object has an owner (being another object)
 \item Ownership is acyclic (there are no cycles in an ownership graph)
-\item This organises the heap into a tree-structure
+\item These two properties organise the heap into a tree-structure
 \end{itemize}
 
 \begin{figure}[H]
@@ -357,7 +390,7 @@ digraph Immutability {
 \label{fig:ownership-hierachy}
 \end{figure}
 
-Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, with each node
+Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node
 is an object, their contents describing their address, class and owner\footnote{Eg 5:B<2> is
 an object at address 5, of class C owned by the object at address 2}, edges are
 field references.
@@ -369,8 +402,8 @@ $\>\>2.owned=\{4,5\}\>\>2.owned^{*}=\{4,5,7\}\>\>5.owned=\{6,7\}$
 By general intuition, if $x$ and $y$ are not aliases, and neither owns the other, then
 $x.owned^{*} \cap x.owned^{*} = \emptyset$
 
-We can see ownership types as alternative method to formalising of the unique mode,
-where the owner of an reference is the same a unique reference. This confers similar
+We can view ownership types as an alternative method of describing uniqueness,
+where the owner of a reference is the same a unique reference. This confers similar
 advantages to unique references: easier parallelism, concurrency and reasoning.
 
 If $x.y$ and $x.z$ are not in each others ownership sets, then $x.y.method$ will maintain
@@ -380,21 +413,6 @@ There are some disadvantages to this approach, for example transferring ownershi
 object from one object to another is not easy in a static type system\cite{clarke1998}. There
 is also a complexity overhead of annotating code with the specific owner of the code.
 
-\subsection{Use Cases for the Actor-Model}
-
-The Actor-Model can be used to help model and reason about many different concurrent
-systems, for example:
-
-\begin{itemize}
-\item Web services with the endpoints as separate actors
-\item Email, with different accounts being different accounts
-\item GUI programming, where the view, model and controller are separate actors
-	 each passing messages to each other.
-\end{itemize}
-
-Actors allow you to think about concurrency on a more abstract level than approaches such as
-locking.
-
 \subsection{Erlang}
 
 In 1986, the Ericsson Computer Science Laboratory began the development of
@@ -403,15 +421,15 @@ mathematician, or ERicsson LANGuage, depending on who you ask). The Lab was
 tasked with "providing a better way of programming telephony applications". In
 the 1980s telephony requirements were atypical to those of other industries,
 needing to be very concurrent (handling thousands and thousands of calls at
-once), but these processes can be very lightweight and each one requires very
+once), but these processes can be very lightweight and each one requiring very
 little work. It was a requirement that the system be very tolerant of
 faults and allow on-the-fly upgrades without system downtime. It turns out all
 of these requirements map very easily and effectively onto the actor-model.
 
-Erlang is now used across industry for so-called "soft real-time" programming,
+Erlang is now used across industry for so-called "soft real-time" programming
 in many different areas, including (but not limited to) telecoms (at T-Mobile,
 Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat,
-Trading (Goldman Sachs and Smarkets) and game servers (Call of Duty and
+Trading (Goldman Sachs and Smarkets) and online games (Call of Duty and
 Battlestar Galactica).
 
 Erlang has a very different syntax to most other programming languages, taking
@@ -451,20 +469,21 @@ end.
 \end{figure}
 
 Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show
-some example Erlang code - demonstrating some very different syntax and
+some examples of Erlang code - demonstrating some very different syntax and
 semantics to that which programmers usually expect from languages such as Java
 or C.
 
 \subsection{Scala \& Akka}
 
-Scala is a programming language, developed at EPFL in Switzerland, designed to be
-a successor to Java, integrating functional alongside object-orientated programming.
+Scala is a programming language, developed at EPFL\footnote{École polytechnique fédérale de
+Lausanne} in Switzerland, which was designed to be a successor to Java,
+integrating functional alongside object-orientated programming.
 It includes a myriad of orthogonal features, including anonymous functions, lazy
 initialisation, pattern-matching, continuations, type inference and operator overloading.
 
 Scala has significant library support for actors, with the Akka framework. Originally there
 were two libraries, scala.actors and akka.actors, with scala.actors being replaced with
-akka actors in 2.10\footnote{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html},
+akka actors in 2.10\footnote{\url{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html}},
 both frameworks were designed to look like Erlang syntax using operator overloading.
 
 \begin{figure}[H]
@@ -578,28 +597,29 @@ behavior HelloWorld {
 \label{fig:salsa-helloworld}
 \end{figure}
 
-In figure \ref{fig:salsa-helloworld} we see how actors are utilised in SALSA,
-messages can have an enforced order, which is against the principle of the
-actor model (where messages can arrive in any order) - SALSA solves this
+In figure \ref{fig:salsa-helloworld}\footnote{\url{http://wcl.cs.rpi.edu/salsa/demos/helloworld.htm}}
+we see how actors are utilised in SALSA.
+Messages can have an enforced partial-order, which is against the principle of the
+actor model (where messages can arrive in any order). SALSA solves this
 by grouping the messages into a single message before sending them to the
 other actor. This allows a programmer to specify partial orderings in the
 messages, which is very useful for tasks relating to I/O.
 
 \subsection{Pony}
 
-In my masters project I will focus on designing and creating a new programming
-language, called Pony, that will introduce a relatively novel kind of type system,
+This project will focus on designing and creating a new programming
+language called Pony, that will introduce a relatively novel kind of type system,
 determining mutability, immutability and uniqueness. This language will treat
 actors as first class members and will have several relatively unexplored
 features for a programming language, including no inheritance (but with traits
 to allow code reuse), a feature being called partial objects and referential
 immutability expressed in the type system.
 
-Pony will be a
+Pony will be a:
 \begin{itemize}
 \item high level
 \item imperative
-\item object orientated
+\item object oriented
 \item functional
 \item single-dispatch
 \item statically-typed
@@ -650,10 +670,10 @@ In this example several properties of Pony become visible:
 
 \subsection{Investigation}
 The first step of the project will be an investigation into the design of
-programming languages, and will include what features would be useful, targeting
-specific areas where Pony will be used, what style of code people want to write
-in the language. An investigation into LLVM and the Intermediate Form it uses
-will also be necessary.
+programming languages, and will look at which features could be useful, targeting
+specific areas where Pony will be used. It will also look at the style of code that
+programmers want to write in the language. An investigation into LLVM and the
+Intermediate Representation it uses will also be necessary.
 
 \subsection{Design}
 The next step will be to design the Pony language and decide on an initial,
@@ -661,30 +681,30 @@ concrete syntax for the language (the operational semantics for the language
 having already been formalised). The specification should comprise a grammar in
 EBNF, along with a description of the semantics of the language.
 \subsection{Implementation}
-The implementation side of the project will be formed of several parts once a
+The implementation side of the project will be consist of several parts once a
 specification is formalised.
 
 \begin{enumerate}
-	\item Write initial test code in Pony that should be able to be compiled.
-	\item Pony compiler for a small subset of the language written in a native
+	\item Initial test code in Pony that should be possible compiled.
+	\item A Pony compiler for a small subset of the language written in a native
     language (such as C++) with error handling for features included
 		\begin{itemize}
 			\item Lexing and Parsing of the full language, which means we can
             use all of the C++ debugging tools available to us to debug the
-            parser, which will need to be handrolled (as there will be no parser
-            generator for Pony). This also means we	can easily port the C++ code
-            to Pony and require no maintenance once implemented
+            parser, which will need to be hand-rolled (as there will be no parser
+            generator for Pony). This also means we can easily port the C++ code
+            to Pony and requires no maintenance once implemented
 			\item Object oriented features, such as classes, traits and
             objects.
 			\item Minimal type checking, with no inference
 			\item No partial objects
-			\item At this point we will not consider mutability in the type
-            system at all, as this will make the initial compiler easier
-            (annotations will be supported, if they are not too difficult)
 			\item Output LLVM IR
 		\end{itemize}
+	At this point we will not consider modes in the type system at all, as this 
+	will make the initial compiler easier (annotations will be supported, if
+	they are not too difficult)
 	\item An initial Pony compiler, written in Pony as a reimplementation of the
-    C++ compiler, this will	serve as a test of the expressiveness of the
+    C++ compiler. This will	serve as a test of the expressiveness of the
     language and let us determine what may need	to be added to the language.
 	\item Incremental improvements to the compiler, adding features such as
     partial objects, mutability inference and optimisations based on mutability
@@ -696,7 +716,7 @@ specification is formalised.
 
 \subsection{Best case scenario}
 
-The best case scenario should have the compiler for the full Pony language, with
+The best case scenario would have a compiler for the full Pony language, with
 an LLVM backend and a type system capable of correctly proving mutability across
 a variety of different situations.
 
@@ -707,25 +727,23 @@ The Pony compiler should be able to compile itself with no errors.
 
 \subsection{Expectations}
 
-I do not expect to succeed at all these goals, since that would be far too
+I do not expect to achieve all these goals, since that would be too
 ambitious for the timescale of this project. Instead I will focus on:
 \begin{itemize}
-\item Correctly implementing the mutability side of
-	the type system, as this is an area of active research currently, with
+\item Correctly implementing the modal side of the type system, as
+	this is currently an area of active research, with
 	Microsoft	having written several million lines of code in a C\# variant,
-	mentioning this in a paper released in November\cite{microsoft2012}.
-
+	which is referred to in a paper released in November\cite{microsoft2012}.
 \item An implementation of Partial Objects, in order to demonstrate their
 	usefulness. For example implementing stringability via partial objects
 	would be a (relatively) straightforward effort, subject to time available.
-
-\item The bootstrapping process should be easily extendable for incremental
+\item The bootstrapping process, which should be easily extendable for incremental
 	 improvements to the compiler.
 \end{itemize}
 
-As these will highlight strengths in Pony and allow other people to see what
-strengths it might have, as well as allowing easy expansion of the compiler and
-language at a later date.
+These will highlight Pony's strengths and will demonstrate them to other people
+to see what strengths it might have, as well as allowing easy expansion of the
+compiler and language at a later date.
 
 \subsection{Code which should compile}
 
@@ -781,7 +799,7 @@ with the only dependency being LLVM.
 	with respect to issues such as semi-colon line endings
 \item The C++ compiler has a hand-written lexer and parser, with custom error
 	messages.
-\item Semantic analyser, checking the types and building a symbol table.
+\item Semantic analyser has been written, checking the types and building a symbol table.
 \item Work towards a standard library, operations on primitive types, including
 	arrays.
 \end{itemize}
@@ -790,13 +808,13 @@ with the only dependency being LLVM.
 
 \subsection{Infrastructure}
 
-In order to explore the interesting parts of this project, a fully working
+In order to explore the more interesting parts of this project, a fully working
 compiler needs to be constructed. This is obviously a large undertaking, and
 errors in the actual compiler could cause errors in the type system, making
 debugging considerably harder.
 
 The fact that this is a new programming language also means the tools are not
-very robust, the errors emitted by the compiler will be less clear and less
+very robust and the errors emitted by the compiler will be less clear and less
 verbose\footnote{And sometimes not even correct error messages!} than if the
 type system was written in a more mature language. There will also only be
 a limited support network of two or three people at Imperial College London!
@@ -805,8 +823,8 @@ a limited support network of two or three people at Imperial College London!
 
 Problems that might arise directly related to the modal-type system
 	\begin{itemize}
-		\item How to interoperate with other LLVM code. For example using if a
-		developer was using OpenGL LLVM API should we consider all return
+		\item How to interoperate with other LLVM code. For example if a
+		developer was using the OpenGL LLVM API, should we consider all return
 		values to be mutable? Or should we require users to provide wrappers
 		to the external code, annotating as appropriate.
 		\item Allowing casting. Should we allow an implicit conversion from
