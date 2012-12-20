@@ -3,9 +3,6 @@
 %%% TeX-master: t
 %%% End:
 
-% The comment above tells emacs that this file is the only file in
-% this LaTeX project.
-
 \documentclass{article}
 
 \usepackage{amsmath}
@@ -14,6 +11,7 @@
 \usepackage{tikz}
 \usepackage{hyperref}
 \usetikzlibrary{shapes,arrows}
+\usepackage{enumitem}
 
 \usepackage{float}
 \floatstyle{boxed}
@@ -27,61 +25,52 @@
 \author{ 	Michael Thorpe\\
 		Imperial College London\\
 		michael.thorpe09@imperial.ac.uk}
+
 \maketitle
+
+\setcounter{tocdepth}{2}
 \tableofcontents
 
-\section{Introduction}
+\newpage
+\begin{abstract}
 
-Concurrency is very hard to get right. Shared resources require
-semaphores, locking and monitors which are easy to get wrong
-and even these protections can introduce race conditions.
-The Actor-Model can have some of the same problems - actors
-can modify shared data and introduce data contention.
-For my project I will investigate, design and implement an actor-model
-programming language, called Pony, which will fix these problems.
+Concurrent Programming is very hard to get right.
+Shared resources require semaphores, locking and monitors which are easy to get wrong and even these protections can introduce race conditions.
+The Actor-Model solves some of these same problems, but actors can still modify shared data and introduce data contention or get stuck in deadlock.
+For my project I will investigate, design and implement an actor-model programming language, called Pony, which will address some of these problems.
+\end{abstract}
 
-\subsection{The Actor-Model}
+\section{Background}
 
-Actors can be used to model large numbers of different concurrent processes in a
-logical and realistic manner, in which actors are a primitive in concurrency. In
-fact it can be seen as a continuation of OO message-passing, where objects exist
-on different threads. Actors have a mailbox and can send and receive messages,
-and can react to those messages in a variety of different ways. The idea behind
-the actor-model is that there is no global state, instead each actor has its own
-local state and can affect the state of other actors by sending them messages.
+\subsection{Concurrency and The Actor-Model}
+
+Actors can be used to model large numbers of different concurrent processes in a logical and realistic manner, in which actors are a primitive in concurrency.
+In fact the actor-model can be seen as a continuation of OO message-passing, where objects exist on different threads.
+Actors have a mailbox and can send and receive messages, and can react to those messages in a variety of different ways.
+The idea behind the actor-model is that there is no global state, instead each actor has its own local state and can only affect the state of other actors by sending them messages.
 
 In his thesis, Agha\cite{agha1985} stated that actors can:
-\begin{enumerate}
-\item Send a finite number of asynchronous, buffered messages to other actors,
-with guaranteed delivery but no ordering guarantees.
+\begin{enumerate}[noitemsep]
+\item Send a finite number of asynchronous, buffered messages to other actors, with guaranteed delivery but no ordering guarantees.
 \item Select the behaviour to be executed on receipt of the next message.
 \item Create a finite number of new actors.
 \end{enumerate}
 
 \subsubsection{History}
 
-Actors were first introduced in 1973\cite{hewitt1973} and were inspired by
-physics and by the real world (compared to other models for concurrency, which
-were based on mathematical models such as set theory). Several languages, such
-as Simula (1967) and Smalltalk (1971-72), previously had some of the first
-message passing semantics, but they were not designed for actors, but rather as
-part of their object-orientation, with the messages being sent synchronously, rather
-than asynchronously.
+Actors were first introduced in 1973\cite{hewitt1973} and were inspired by physics and by the real world (compared to other models for concurrency, which were based on mathematical models such as set theory\cite{hewitt2006}).
+Several languages, such as Simula (1967) and Smalltalk (1971-72), had some of the first message passing semantics, but the message passing was not designed for actors, but rather as part of their object-orientation, with the messages being sent synchronously, rather than asynchronously.
 
-Actors became formally defined in 1973-1977, with Greif providing the
-operational semantics for actors\cite{grief1975} and Baker and Hewitt providing
-Laws for Actors\cite{hewitt1977}. However the actor-model did not (and
-indeed has not) gained much popularity, with Mackay\cite{mackay97} claiming that
-actors did not catch on because the conceptual model did not map very easily
-onto an efficient implementation, which developers at the time could use.
+Actors were formally defined in 1973-1977, though Greif's operational semantics for actors\cite{grief1975} and Baker and Hewitt's Laws for Actors in 1977\cite{hewitt1977}.
+However the actor-model did not, and indeed has not, gain much popularity, with Mackay\cite{mackay97} claiming that actors did not catch on because the conceptual model did not map very easily onto an efficient implementation, which developers at the time could use.
 
 \subsubsection{State of the Art}
 
 There are two popular languages involved in the active development of actors -
 Erlang and Scala (a JVM\footnote{Java Virtual Machine}-based language), as well
-as several others (such as F\#, C++, D and Rust). Erlang is dynamically typed,
-runs on its own virtual machine with its own eco-system, whereas Scala runs on
-top of the JVM with the ecosystem and high level support that provides.
+as several others (such as SALSA, AmbientTalk, F\#, C++, D and Rust).
+Erlang is dynamically typed, runs on its own virtual machine with its own eco-system,
+whereas Scala runs on top of the JVM with the ecosystem and high level support that it provides.
 
 Scala and Erlang both have their own implementation of actors, the semantics
 of both being more or less the same, however there are some differences. For
@@ -140,7 +129,7 @@ Actors fit perfectly into this paradigm, meeting all of the requirements.
 Sharing immutable data between processes is fine, since this can be seen as each
 process having its own, separate copy of the data.
 
-\subsection{Use Cases for the Actor-Model}
+\subsubsection{Use Cases for the Actor-Model}
 
 The Actor-Model can be used to help model and reason about many different concurrent
 systems, for example:
@@ -155,7 +144,201 @@ systems, for example:
 An advantage of actors allow you to think about concurrency on a more abstract level
 than approaches such as locking.
 
-\subsection{Partial objects}
+\subsection{Actor-Based Languages}
+
+\subsubsection{Erlang}
+
+In 1986, the Ericsson Computer Science Laboratory began the development of
+Erlang\cite{armstrong2007} (named after either Agner Krarup Erlang, a Danish
+mathematician, or ERicsson LANGuage, depending on who you ask). The Lab was
+tasked with "providing a better way of programming telephony applications". In
+the 1980s telephony requirements were atypical to those of other industries,
+needing to be very concurrent (handling thousands and thousands of calls at
+once), but these processes can be very lightweight and each one requiring very
+little work. It was a requirement that the system be very tolerant of
+faults and allow on-the-fly upgrades without system downtime. It turns out all
+of these requirements map very easily and effectively onto the actor-model.
+
+Erlang is now used across industry for so-called "soft real-time" programming
+in many different areas, including (but not limited to) telecoms (at T-Mobile,
+Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat,
+Trading (Goldman Sachs and Smarkets) and online games (Call of Duty and
+Battlestar Galactica).
+
+Erlang has a very different syntax to most other programming languages, taking
+inspiration from Prolog (and in fact the original Erlang interpreter was written
+in Prolog), which has been a reason for its low popularity.
+
+\begin{figure}[H]
+\begin{verbatim}
+module(area).
+-export([loop/1]).
+loop(Tot) ->
+    receive
+        {Pid, {square, X}} ->
+            Pid ! X*X,
+            loop(Tot + X*X);
+        {Pid, {rectangle,[X,Y]}} ->
+            Pid ! X*Y,
+            loop(Tot + X*Y);
+        {Pid, areas} ->
+end.
+\end{verbatim}
+\caption{Area calculator server in Erlang}
+\label{fig:example_erlang_server}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+Pid = spawn(fun() -> area:loop(0) end),
+Pid ! {self(), {square, 10}},
+    receive
+        Area ->
+        ...
+end.
+\end{verbatim}
+\caption{Area calculator client in Erlang}
+\label{fig:example_erlang_client}
+\end{figure}
+
+Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show
+some examples of Erlang code - demonstrating some very different syntax and
+semantics to that which programmers usually expect from languages such as Java
+or C.
+
+\subsubsection{Scala \& Akka}
+
+Scala is a programming language, developed at EPFL\footnote{ƒcole polytechnique fŽdŽrale de
+Lausanne} in Switzerland, which was designed to be a successor to Java,
+integrating functional alongside object-orientated programming.
+It includes a myriad of orthogonal features, including anonymous functions, lazy
+initialisation, pattern-matching, continuations, type inference and operator overloading.
+
+Scala has significant library support for actors, with the Akka framework. Originally there
+were two libraries, scala.actors and akka.actors, with scala.actors being replaced with
+akka actors in 2.10\footnote{\url{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html}},
+both frameworks were designed to look like Erlang syntax using operator overloading.
+
+\begin{figure}[H]
+\begin{verbatim}
+import akka.actor._
+
+class Ping extends Actor {
+  val a = ActorSystem("Ping").actorOf(Props[Pong],name="ping")
+  def receive = {
+    case "ping" =>
+      println("ping")
+      a ! "pong"
+  }
+}
+
+class Pong extends Actor {
+  def receive = {
+    case "pong" =>
+      println("pong")
+      sender ! "ping"
+  }
+}
+
+object main extends App {
+
+  val a = ActorSystem("Ping").actorOf(Props[Ping],name="pong")
+
+  a ! "ping"
+
+}
+\end{verbatim}
+\caption{Scala Ping Pong}
+\label{fig:scala-ping-pong}
+\end{figure}
+
+Figure \ref{fig:scala-ping-pong} shows an example usage of Akka actors, where two actors
+reply to each other in an infinite loop. This style of code is more familiar to 
+developers who have experience in languages such as Java.
+
+\subsubsection{AmbientTalk}
+
+AmbientTalk is an experimental language, developed at Vrije Universiteit Brussel, designed to
+write distributed software across low quality wireless networks. Its design was strongly
+influenced by SmallTalk (block closures, keyworded messages), with its concurrency model
+based on the actor-model supporting futures and event-loops.
+
+\begin{figure}[H]
+\begin{verbatim}
+>def calculator := actor: {
+  def add(x,y,customer) {
+    customer<-result(x+y)
+  };
+};
+>><far ref:behaviour of <actormirror:14115383>>
+
+>calculator<-add(1,2,object: {
+  def result(sum) {
+    system.println("sum = " + sum);
+  };
+});
+>>nil
+
+>calculator<-add(1,2,object: {
+  def result(sum) {
+    system.println("sum = " + sum);
+  };
+});
+>>nil
+\end{verbatim}
+\caption{AmbientTalk Calculator}
+\label{fig:ambienttalk-calc}
+\end{figure}
+
+In figure \ref{fig:ambienttalk-calc}, the REPL\footnote{Read Evaluate Print Loop} creates a
+new actor, sends it a message with a code block as the last parameter that allows it to
+print out the result.
+
+\subsubsection{SALSA}
+
+The SALSA programming language (Simple Actor Language System and Architecture) is
+an actor-based language, which is compiled to Java source, then Java byte code, running
+on top of the JVM.
+
+\begin{figure}[H]
+\begin{verbatim}
+/*
+   This behavior simply sends two print(...) messages to the 
+   standardOutput actor.
+*/
+behavior HelloWorld {
+   /*
+      The act(...) message handler is invoked by stand-alone
+      theaters automatically and is used to bootstrap salsa
+      programs.
+   */
+   void act( String[] argv ) {
+      standardOutput<-print( "Hello" ) @
+      standardOutput<-print( "World!" );
+   }
+   /*
+      Notice that the above code is different from 
+         standardOutput<-print( "Hello" );
+         standardOutput<-print( "World!" );
+      the code above uses a continuation to insure that the 
+      world message is sent after the hello message 
+      completes processing.
+   */
+}
+\end{verbatim}
+\caption{SALSA Hello, World}
+\label{fig:salsa-helloworld}
+\end{figure}
+
+In figure \ref{fig:salsa-helloworld}\footnote{\url{http://wcl.cs.rpi.edu/salsa/demos/helloworld.htm}}
+we see how actors are utilised in SALSA.
+Messages can have an enforced partial-order, which is against the principle of the
+actor model (where messages can arrive in any order). SALSA solves this
+by grouping the messages into a single message before sending them to the
+other actor. This allows a programmer to specify partial orderings in the
+messages, which is very useful for tasks relating to I/O.
+
+\subsection{Language Features}
 
 \subsubsection{Current Solutions to Object Cloning}
 
@@ -189,149 +372,7 @@ allowing older versions of the object in question to be deserialized without pro
 
 More research needed still
 
-\subsubsection{Partial Objects}
-
-Partial objects are a unique feature of Pony and are a new concept. They are not
-created by the user, but automatically generated by the compiler. For the rest
-of this paper, I will express a partial object of type $T$
-as $\backslash T$
-
-\begin{figure}[H]
-$T = (fieldId \to type) \times (function \to signature)\\$
-$dom(T\downarrow_{1}) = \{ f_{1} \dots f_{n} \} \Rightarrow\\$
-$\> \exists \backslash T.dom(\backslash T\downarrow_{1}) = \{f_{1}^{'}\dots f_{n}^{'}\wedge
-\forall_{i\in 1\dots n}.\backslash T\downarrow_{1} \in \{T\downarrow_{f_{i}}, 
-\backslash(T\downarrow_{1}(f_{i}), undefined\}$
-\caption{Formal Representation of Partial Objects}
-\end{figure}
-
-That is, for each field in $T$, the field can be $T_{n}$, $\backslash T_{n}$ (so
-a partial $T_{n}$) or $undefined$ (the field doesn't exist). The potential for
-this is not immediately obvious, but the advantages for the developer will
-become apparent later on in the report. This simple concept can be shown
-to easily solve problems such as cloning, serialisation and stringability. For
-now we will get a partial object by calling $reflect(pattern)$ where $pattern$
-is optional and specifies what fields are to be returned on $this$ (the default
-being all public fields), with $this$ being passed implicitly.
-
-\begin{figure}[H]
-\begin{verbatim}
-    function toString()->(r:String) {
-        r = "";
-        var mirror = reflect();
-        for name,value in mirrors.fields() {
-            match value {
-                case substring as v:Stringable {
-                    r = r + name ":\t" + value.toString() +"\n";
-                }
-                case {}
-            }
-        }
-    }
-\end{verbatim}
-\caption{Example usage of partial objects}
-\label{fig:partialobj}
-\end{figure}
-
-In the code above we can see some more of the syntax and ideas of Pony, as well
-as the power of partial objects.
-
-\subsection{Modal References}
-\label{sec:immutability}
-
-Capabilities:
-
-
-An object can possess one of four qualifiers\cite{microsoft2012}
-
-\begin{itemize}
-	\item Mutable - the "standard" reference to an object - mutation of the
-    object is allowed. The object can refer to any other kind of qualifier with
-    no restrictions.
-	\item Read-only - a read-only reference to an object, allowing for no
-    mutation. There is an additional restriction on read-only values, in that
-    traversing the heap through a read-only reference will only ever produce
-    non-mutable references
-	\item Immutable - a read-only object with a further restriction in that no
-    other references to that object are able to mutate it.
-	\item Unique - an external reference to a cluster of externally unique
-    references -- REPHRASE
-\end{itemize}
-
-The "mode" of a reference (which can be seen as comparable to a file reading
-mode - read, write etc) dictates what can be done to that object. Objects can be
-upcast the hierarchy (i.e. $unique \to mutable$) without problem. However 
-downcasting is not permitted, as this violates capability constraints.
-
-\begin{figure}[H]
-\begin{center}
-\begin{dot2tex}[dot,options=-tmath]
-digraph Immutability {
-  rankdir=BT;
-  mutable	-> readonly;
-  immutable -> readonly;
-  unique	-> immutable;
-  unique	-> mutable;
-}
-\end{dot2tex}
-\caption{Mode Hierarchy}
-\label{fig:mode-hierarchy}
-\end{center}
-\end{figure}
-
-Pony will provide a simple syntax for describing these modes and will infer
-the mode of references whenever possible. For now the syntax for modes is as
-follows: readonly - no notation (being the default),  mutable - \textasciitilde (think 
-$\rightsquigarrow$ for heap mutation), immutable - ! and unique - @
-
-Conversions to and from unique should be possible, since uniqueness does not
-fit into the hierarchy in the purest sense. Since unique references are only
-accessible from a single thread, they can become mutable. They can also be
-converted to immutable, since a single thread holds a reference the decision to
-treat the object cluster as immutable is localised.
-
-\begin{figure}[H]
-\begin{verbatim}
-    var x@ = new Array(....);
-    // ...
-    x(0) = ...; // x converted to mutable
-\end{verbatim}
-\caption{Conversion to mutable}
-\end{figure}
-
-\begin{figure}[H]
-\begin{verbatim}
-    var x@ = new Array(...);
-    var y! = x; // x implicitly converted to immutable
-    x(0) = ...; // x is now out of scope, so compilation error
-\end{verbatim}
-\caption{Conversion to immutable}
-\end{figure}
-
-We can also recover uniqueness from a conversion to mutable/immutable, inside
-the body of a function, as the conversion does not mean we permanently lose the
-information.
-
-\begin{figure}[H]
-\begin{verbatim}
-    function! double(x:Object@)->(y:Object@) {
-        // make x mutable
-        x.field = 2;
-        // y can be safely converted to unique
-        // since there is only one reference left at
-        // the function exit point - y
-        y = x;
-    }
-\end{verbatim}
-\caption{Conversion to and from unique}
-\end{figure}
-
-This ability is very useful, since it means we can easily parallelise
-destructive operations on collections of unique objects, as each process can
-violate the uniqueness constraint, do the operation and return the unique
-reference.
-
-\subsection{Alternatives to Modal References}
+\subsection{Type-based Solutions to Safe Concurrency}
 
 There are alternatives to using modal references for making concurrency safer,
 which have their own advantages and disadvantages, as discussed below.
@@ -413,199 +454,11 @@ There are some disadvantages to this approach, for example transferring ownershi
 object from one object to another is not easy in a static type system\cite{clarke1998}. There
 is also a complexity overhead of annotating code with the specific owner of the code.
 
-\subsection{Erlang}
+\subsubsection{Cyclone}
 
-In 1986, the Ericsson Computer Science Laboratory began the development of
-Erlang\cite{armstrong2007} (named after either Agner Krarup Erlang, a Danish
-mathematician, or ERicsson LANGuage, depending on who you ask). The Lab was
-tasked with "providing a better way of programming telephony applications". In
-the 1980s telephony requirements were atypical to those of other industries,
-needing to be very concurrent (handling thousands and thousands of calls at
-once), but these processes can be very lightweight and each one requiring very
-little work. It was a requirement that the system be very tolerant of
-faults and allow on-the-fly upgrades without system downtime. It turns out all
-of these requirements map very easily and effectively onto the actor-model.
+\subsubsection{Regions}
 
-Erlang is now used across industry for so-called "soft real-time" programming
-in many different areas, including (but not limited to) telecoms (at T-Mobile,
-Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat,
-Trading (Goldman Sachs and Smarkets) and online games (Call of Duty and
-Battlestar Galactica).
-
-Erlang has a very different syntax to most other programming languages, taking
-inspiration from Prolog (and in fact the original Erlang interpreter was written
-in Prolog), which has been a reason for its low popularity.
-
-\begin{figure}[H]
-\begin{verbatim}
-module(area).
--export([loop/1]).
-loop(Tot) ->
-    receive
-        {Pid, {square, X}} ->
-            Pid ! X*X,
-            loop(Tot + X*X);
-        {Pid, {rectangle,[X,Y]}} ->
-            Pid ! X*Y,
-            loop(Tot + X*Y);
-        {Pid, areas} ->
-end.
-\end{verbatim}
-\caption{Area calculator server in Erlang}
-\label{fig:example_erlang_server}
-\end{figure}
-
-\begin{figure}[H]
-\begin{verbatim}
-Pid = spawn(fun() -> area:loop(0) end),
-Pid ! {self(), {square, 10}},
-    receive
-        Area ->
-        ...
-end.
-\end{verbatim}
-\caption{Area calculator client in Erlang}
-\label{fig:example_erlang_client}
-\end{figure}
-
-Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show
-some examples of Erlang code - demonstrating some very different syntax and
-semantics to that which programmers usually expect from languages such as Java
-or C.
-
-\subsection{Scala \& Akka}
-
-Scala is a programming language, developed at EPFL\footnote{ƒcole polytechnique fŽdŽrale de
-Lausanne} in Switzerland, which was designed to be a successor to Java,
-integrating functional alongside object-orientated programming.
-It includes a myriad of orthogonal features, including anonymous functions, lazy
-initialisation, pattern-matching, continuations, type inference and operator overloading.
-
-Scala has significant library support for actors, with the Akka framework. Originally there
-were two libraries, scala.actors and akka.actors, with scala.actors being replaced with
-akka actors in 2.10\footnote{\url{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html}},
-both frameworks were designed to look like Erlang syntax using operator overloading.
-
-\begin{figure}[H]
-\begin{verbatim}
-import akka.actor._
-
-class Ping extends Actor {
-  val a = ActorSystem("Ping").actorOf(Props[Pong],name="ping")
-  def receive = {
-    case "ping" =>
-      println("ping")
-      a ! "pong"
-  }
-}
-
-class Pong extends Actor {
-  def receive = {
-    case "pong" =>
-      println("pong")
-      sender ! "ping"
-  }
-}
-
-object main extends App {
-
-  val a = ActorSystem("Ping").actorOf(Props[Ping],name="pong")
-
-  a ! "ping"
-
-}
-\end{verbatim}
-\caption{Scala Ping Pong}
-\label{fig:scala-ping-pong}
-\end{figure}
-
-Figure \ref{fig:scala-ping-pong} shows an example usage of Akka actors, where two actors
-reply to each other in an infinite loop. This style of code is more familiar to 
-developers who have experience in languages such as Java.
-
-\subsection{AmbientTalk}
-
-AmbientTalk is an experimental language, developed at Vrije Universiteit Brussel, designed to
-write distributed software across low quality wireless networks. Its design was strongly
-influenced by SmallTalk (block closures, keyworded messages), with its concurrency model
-based on the actor-model supporting futures and event-loops.
-
-\begin{figure}[H]
-\begin{verbatim}
->def calculator := actor: {
-  def add(x,y,customer) {
-    customer<-result(x+y)
-  };
-};
->><far ref:behaviour of <actormirror:14115383>>
-
->calculator<-add(1,2,object: {
-  def result(sum) {
-    system.println("sum = " + sum);
-  };
-});
->>nil
-
->calculator<-add(1,2,object: {
-  def result(sum) {
-    system.println("sum = " + sum);
-  };
-});
->>nil
-\end{verbatim}
-\caption{AmbientTalk Calculator}
-\label{fig:ambienttalk-calc}
-\end{figure}
-
-In figure \ref{fig:ambienttalk-calc}, the REPL\footnote{Read Evaluate Print Loop} creates a
-new actor, sends it a message with a code block as the last parameter that allows it to
-print out the result.
-
-\subsection{SALSA}
-
-The SALSA programming language (Simple Actor Language System and Architecture) is
-an actor-based language, which is compiled to Java source, then Java byte code, running
-on top of the JVM.
-
-\begin{figure}[H]
-\begin{verbatim}
-/*
-   This behavior simply sends two print(...) messages to the 
-   standardOutput actor.
-*/
-behavior HelloWorld {
-   /*
-      The act(...) message handler is invoked by stand-alone
-      theaters automatically and is used to bootstrap salsa
-      programs.
-   */
-   void act( String[] argv ) {
-      standardOutput<-print( "Hello" ) @
-      standardOutput<-print( "World!" );
-   }
-   /*
-      Notice that the above code is different from 
-         standardOutput<-print( "Hello" );
-         standardOutput<-print( "World!" );
-      the code above uses a continuation to insure that the 
-      world message is sent after the hello message 
-      completes processing.
-   */
-}
-\end{verbatim}
-\caption{SALSA Hello, World}
-\label{fig:salsa-helloworld}
-\end{figure}
-
-In figure \ref{fig:salsa-helloworld}\footnote{\url{http://wcl.cs.rpi.edu/salsa/demos/helloworld.htm}}
-we see how actors are utilised in SALSA.
-Messages can have an enforced partial-order, which is against the principle of the
-actor model (where messages can arrive in any order). SALSA solves this
-by grouping the messages into a single message before sending them to the
-other actor. This allows a programmer to specify partial orderings in the
-messages, which is very useful for tasks relating to I/O.
-
-\subsection{Pony}
+\section{Pony}
 
 This project will focus on designing and creating a new programming
 language called Pony, that will introduce a relatively novel kind of type system,
@@ -616,7 +469,7 @@ to allow code reuse), a feature being called partial objects and referential
 immutability expressed in the type system.
 
 Pony will be a:
-\begin{itemize}
+\begin{itemize}[noitemsep]
 \item high level
 \item imperative
 \item object oriented
@@ -665,6 +518,147 @@ In this example several properties of Pony become visible:
 \item A for-comprehension - similar to a $for$ loop in Java, C\# or C, but with
       a more expressive syntax.
 \end{itemize}
+
+\subsection{Partial Objects}
+
+Partial objects are a unique feature of Pony and are a new concept. They are not
+created by the user, but automatically generated by the compiler. For the rest
+of this paper, I will express a partial object of type $T$
+as $\backslash T$
+
+\begin{figure}[H]
+$T = (fieldId \to type) \times (function \to signature)\\$
+$dom(T\downarrow_{1}) = \{ f_{1} \dots f_{n} \} \Rightarrow\\$
+$\> \exists \backslash T.dom(\backslash T\downarrow_{1}) = \{f_{1}^{'}\dots f_{n}^{'}\wedge
+\forall_{i\in 1\dots n}.\backslash T\downarrow_{1} \in \{T\downarrow_{f_{i}}, 
+\backslash(T\downarrow_{1}(f_{i}), undefined\}$
+\caption{Formal Representation of Partial Objects}
+\end{figure}
+
+That is, for each field in $T$, the field can be $T_{n}$, $\backslash T_{n}$ (so
+a partial $T_{n}$) or $undefined$ (the field doesn't exist). The potential for
+this is not immediately obvious, but the advantages for the developer will
+become apparent later on in the report. This simple concept can be shown
+to easily solve problems such as cloning, serialisation and stringability. For
+now we will get a partial object by calling $reflect(pattern)$ where $pattern$
+is optional and specifies what fields are to be returned on $this$ (the default
+being all public fields), with $this$ being passed implicitly.
+
+\begin{figure}[H]
+\begin{verbatim}
+    function toString()->(r:String) {
+        r = "";
+        var mirror = reflect();
+        for name,value in mirrors.fields() {
+            match value {
+                case substring as v:Stringable {
+                    r = r + name ":\t" + value.toString() +"\n";
+                }
+                case {}
+            }
+        }
+    }
+\end{verbatim}
+\caption{Example usage of partial objects}
+\label{fig:partialobj}
+\end{figure}
+
+In the code above we can see some more of the syntax and ideas of Pony, as well
+as the power of partial objects.
+
+\subsection{Modal References}
+\label{sec:immutability}
+
+An object can possess one of four qualifiers\cite{microsoft2012}
+
+\begin{itemize}
+	\item Mutable - the "standard" reference to an object - mutation of the
+    object is allowed. The object can refer to any other kind of qualifier with
+    no restrictions.
+	\item Read-only - a read-only reference to an object, allowing for no
+    mutation. There is an additional restriction on read-only values, in that
+    traversing the heap through a read-only reference will only ever produce
+    non-mutable references
+	\item Immutable - a read-only object with a further restriction in that no
+    other references to that object are able to mutate it.
+	\item Unique - an external reference to a cluster of externally unique
+    references -- REPHRASE
+\end{itemize}
+
+Capabilities:
+
+The "mode" of a reference (which can be seen as comparable to a file reading
+mode - read, write etc) dictates what can be done to that object. Objects can be
+upcast the hierarchy (i.e. $unique \to mutable$) without problem. However 
+downcasting is not permitted, as this violates capability constraints.
+
+\begin{figure}[H]
+\begin{center}
+\begin{dot2tex}[dot,options=-tmath]
+digraph Immutability {
+  rankdir=BT;
+  mutable	-> readonly;
+  immutable -> readonly;
+  unique	-> immutable;
+  unique	-> mutable;
+}
+\end{dot2tex}
+\caption{Mode Hierarchy}
+\label{fig:mode-hierarchy}
+\end{center}
+\end{figure}
+
+Pony will provide a simple syntax for describing these modes and will infer
+the mode of references whenever possible. For now the syntax for modes is as
+follows: readonly - no notation (being the default),  mutable - \textasciitilde (think 
+$\rightsquigarrow$ for heap mutation), immutable - ! and unique - @
+
+Conversions to and from unique should be possible, since uniqueness does not
+fit into the hierarchy in the purest sense. Since unique references are only
+accessible from a single thread, they can become mutable. They can also be
+converted to immutable, since a single thread holds a reference the decision to
+treat the object cluster as immutable is localised.
+
+\begin{figure}[H]
+\begin{verbatim}
+    var x@ = new Array(....);
+    // ...
+    x(0) = ...; // x converted to mutable
+\end{verbatim}
+\caption{Conversion to mutable}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+    var x@ = new Array(...);
+    var y! = x; // x implicitly converted to immutable
+    x(0) = ...; // x is now out of scope, so compilation error
+\end{verbatim}
+\caption{Conversion to immutable}
+\end{figure}
+
+We can also recover uniqueness from a conversion to mutable/immutable, inside
+the body of a function, as the conversion does not mean we permanently lose the
+information.
+
+\begin{figure}[H]
+\begin{verbatim}
+    function! double(x:Object@)->(y:Object@) {
+        // make x mutable
+        x.field = 2;
+        // y can be safely converted to unique
+        // since there is only one reference left at
+        // the function exit point - y
+        y = x;
+    }
+\end{verbatim}
+\caption{Conversion to and from unique}
+\end{figure}
+
+This ability is very useful, since it means we can easily parallelise
+destructive operations on collections of unique objects, as each process can
+violate the uniqueness constraint, do the operation and return the unique
+reference.
 
 \section{Project Plan}
 
