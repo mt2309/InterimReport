@@ -66,58 +66,40 @@ However the actor-model did not, and indeed has not, gain much popularity, with 
 
 \subsubsection{State of the Art}
 
-There are two popular languages involved in the active development of actors -
-Erlang and Scala (a JVM\footnote{Java Virtual Machine}-based language), as well
-as several others (such as SALSA, AmbientTalk, F\#, C++, D and Rust).
-Erlang is dynamically typed, runs on its own virtual machine with its own eco-system,
-whereas Scala runs on top of the JVM with the ecosystem and high level support that it provides.
+There are two popular languages involved in the active development of actors - Erlang and Scala (a JVM\footnote{Java Virtual Machine}-based language), as well as several others (such as SALSA, AmbientTalk, F\#, C++, D and Rust).
+Erlang is dynamically typed, runs on its own virtual machine with its own eco-system, whereas Scala runs on top of the JVM with the ecosystem and high level support that it provides.
 
-Scala and Erlang both have their own implementation of actors, the semantics
-of both being more or less the same, however there are some differences. For
-example in Erlang, multiple processes in the same VM\footnote{Virtual Machine}
-can easily share the same data because the language will guarantee this data is
-immutable. In Scala this is not possible, since you can easily send a mutable
-reference to another actor - which can lead to race conditions. Scala is
-a type-safe language, meaning that code is much easier to error-check, whereas
-Erlang has only limited type-safety.
+Scala and Erlang both have their own implementation of actors, the semantics of both being more or less the same, however there are some differences. 
+For example in Erlang, multiple processes in the same VM\footnote{Virtual Machine} can easily share the same data because the language will guarantee this data is immutable.
+In Scala this is not possible, since you can easily send a mutable reference to another actor - which can lead to race conditions.
+Scala is a type-safe language, meaning that code is much easier to error-check, whereas Erlang has only limited type-safety.
 
-Actors can communicate locally (i.e. running on the same machine) or via a
-network, typically using a protocol over TCP/IP.
+Actors can communicate locally (i.e. running on the same machine) or via a network, typically using a protocol over TCP/IP.
 
-Pony attempts to take the best parts to these two approaches, with some
-additional advantages.
+Pony attempts to take the best parts to these two approaches, with some additional advantages.
 
 \subsubsection{Join Calculus}
 
-The join calculus is a process calculus, developed to formally model the design of
-distributed programming languages\cite{fournet1996}. It avoids some of the problems
-involved with the $\pi$ calculus\cite{milner1989}, which is mostly based on atomic
-non-local interactions, and these are difficult to implement in a real system. Programming
-languages which use actors have separate mechanisms for transmission and
-synchronisation/locking.
+The join calculus is a process calculus, developed to formally model the design of distributed programming languages\cite{fournet1996}.
+It avoids some of the problems involved with the $\pi$ calculus\cite{milner1989}, which is mostly based on atomic non-local interactions, and these are difficult to implement in a real system.
+Programming languages which use actors have separate mechanisms for transmission and synchronisation/locking.
 
-The calculus can be seen as an asynchronous version of the $\pi$ calculus, with
-several strong restrictions\cite{fournet1996}:
+The calculus can be seen as an asynchronous version of the $\pi$ calculus, with several strong restrictions\cite{fournet1996}:
 \begin{enumerate}
-	\item Scope restriction, reception, and replicated reception are syntactically 
-		 merged into a single construct, called the definition
-	\item Communication can only occur on defined names
-	\item For every defined name there is exactly one replicated reception
+	\item Scope restriction, reception, and replicated reception are syntactically merged into a single construct, called the definition.
+	\item Communication can only occur on defined names.
+	\item For every defined name there is exactly one replicated reception.
 \end{enumerate}
 
-These restrictions state, in precise language, that the "processes" in the join calculus
-have definitions (which handle receiving input etc), that they can send messages to named definitions
-and that for each definition there is exactly one instance.
+These restrictions state, in precise language, that the "processes" in the join calculus have definitions (which handle receiving input etc), that they can send messages to named definitions and that for each definition there is exactly one instance.
 
-This calculus can be used to help design, model and implement the semantics of an
-actor-based programming language.
+This calculus can be used to help design, model and implement the semantics of an actor-based programming language.
 
 // More detail here
 
 \subsubsection{Concurrency Orientated Programming}
-Concurrency Orientated Programming\cite{armstrong2007} (or COP) is a programming
-paradigm that states that the design of a program should be based on concurrency
-patterns inherent in the problem. The main ideas behind COP are:
+Concurrency Orientated Programming\cite{armstrong2007} (or COP) is a programming paradigm that states that the design of a program should be based on concurrency patterns inherent in the problem.
+The main ideas behind COP are:
 \begin{itemize}
 \item Systems are built from processes
 \item Processes share nothing by default
@@ -126,48 +108,33 @@ patterns inherent in the problem. The main ideas behind COP are:
 \end{itemize}
 
 Actors fit perfectly into this paradigm, meeting all of the requirements.
-Sharing immutable data between processes is fine, since this can be seen as each
-process having its own, separate copy of the data.
+Sharing immutable data between processes is fine, since this can be modelled as each process having its own, separate copy of the data.
 
 \subsubsection{Use Cases for the Actor-Model}
 
-The Actor-Model can be used to help model and reason about many different concurrent
-systems, for example:
+The Actor-Model can be used to help model and reason about many different concurrent systems, for example:
 
 \begin{itemize}
 \item Web services with the endpoints as separate actors
 \item Email, with different accounts being different actors
-\item GUI programming, where the view, model and controller are separate actors
-	 each passing messages to each other.
+\item GUI programming, where the view, model and controller are separate actors 	 each passing messages to each other.
 \end{itemize}
 
-An advantage of actors allow you to think about concurrency on a more abstract level
-than approaches such as locking.
+An advantage of actors allow you to think about concurrency on a more abstract level than approaches such as locking.
 
 \subsection{Actor-Based Languages}
 
 \subsubsection{Erlang}
 
-In 1986, the Ericsson Computer Science Laboratory began the development of
-Erlang\cite{armstrong2007} (named after either Agner Krarup Erlang, a Danish
-mathematician, or ERicsson LANGuage, depending on who you ask). The Lab was
-tasked with "providing a better way of programming telephony applications". In
-the 1980s telephony requirements were atypical to those of other industries,
-needing to be very concurrent (handling thousands and thousands of calls at
-once), but these processes can be very lightweight and each one requiring very
-little work. It was a requirement that the system be very tolerant of
-faults and allow on-the-fly upgrades without system downtime. It turns out all
-of these requirements map very easily and effectively onto the actor-model.
+In 1986, the Ericsson Computer Science Laboratory began the development of Erlang\cite{armstrong2007} (named after either Agner Krarup Erlang, a Danish mathematician, or ERicsson LANGuage, depending on who you ask).
+The Lab was tasked with "providing a better way of programming telephony applications". 
+In the 1980s telephony requirements were atypical to those of other industries, needing to be very concurrent (handling thousands and thousands of calls at once), but these processes can be very lightweight and each one requiring very little work.
+It was a requirement that the system be very tolerant of faults and allow on-the-fly upgrades without system downtime.
+It turns out all of these requirements map very easily and effectively onto the actor-model.
 
-Erlang is now used across industry for so-called "soft real-time" programming
-in many different areas, including (but not limited to) telecoms (at T-Mobile,
-Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat,
-Trading (Goldman Sachs and Smarkets) and online games (Call of Duty and
-Battlestar Galactica).
+Erlang is now used across industry for so-called "soft real-time" programming in many different areas, including (but not limited to) telecoms (at T-Mobile, Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat, Trading (Goldman Sachs and Smarkets) and online games (Call of Duty and Battlestar Galactica).
 
-Erlang has a very different syntax to most other programming languages, taking
-inspiration from Prolog (and in fact the original Erlang interpreter was written
-in Prolog), which has been a reason for its low popularity.
+Erlang has a very different syntax to most other programming languages, taking inspiration from Prolog (and in fact the original Erlang interpreter was written in Prolog), which has been a reason for its low popularity.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -201,23 +168,14 @@ end.
 \label{fig:example_erlang_client}
 \end{figure}
 
-Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show
-some examples of Erlang code - demonstrating some very different syntax and
-semantics to that which programmers usually expect from languages such as Java
-or C.
+Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show some examples of Erlang code - demonstrating some very different syntax and semantics to that which programmers usually expect from languages such as Java or C.
 
 \subsubsection{Scala \& Akka}
 
-Scala is a programming language, developed at EPFL\footnote{École polytechnique fédérale de
-Lausanne} in Switzerland, which was designed to be a successor to Java,
-integrating functional alongside object-orientated programming.
-It includes a myriad of orthogonal features, including anonymous functions, lazy
-initialisation, pattern-matching, continuations, type inference and operator overloading.
+Scala is a programming language, developed at EPFL\footnote{École polytechnique fédérale de Lausanne} in Switzerland, which was designed to be a successor to Java, integrating functional alongside object-orientated programming.
+It includes a myriad of orthogonal features, including anonymous functions, lazy initialisation, pattern-matching, continuations, type inference and operator overloading.
 
-Scala has significant library support for actors, with the Akka framework. Originally there
-were two libraries, scala.actors and akka.actors, with scala.actors being replaced with
-akka actors in 2.10\footnote{\url{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html}},
-both frameworks were designed to look like Erlang syntax using operator overloading.
+Scala has significant library support for actors, with the Akka framework. Originally there were two libraries, scala.actors and akka.actors, with scala.actors being replaced with akka actors in 2.10\footnote{\url{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html}}, both frameworks were designed to look like Erlang syntax using operator overloading.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -252,16 +210,13 @@ object main extends App {
 \label{fig:scala-ping-pong}
 \end{figure}
 
-Figure \ref{fig:scala-ping-pong} shows an example usage of Akka actors, where two actors
-reply to each other in an infinite loop. This style of code is more familiar to 
-developers who have experience in languages such as Java.
+Figure \ref{fig:scala-ping-pong} shows an example usage of Akka actors, where two actors reply to each other in an infinite loop.
+This style of code is more familiar to developers who have experience in languages such as Java.
 
 \subsubsection{AmbientTalk}
 
-AmbientTalk is an experimental language, developed at Vrije Universiteit Brussel, designed to
-write distributed software across low quality wireless networks. Its design was strongly
-influenced by SmallTalk (block closures, keyworded messages), with its concurrency model
-based on the actor-model supporting futures and event-loops.
+AmbientTalk is an experimental language, developed at Vrije Universiteit Brussel, designed to write distributed software across low quality wireless networks.
+Its design was strongly influenced by SmallTalk (block closures, keyworded messages), with its concurrency model based on the actor-model supporting futures and event-loops.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -290,15 +245,11 @@ based on the actor-model supporting futures and event-loops.
 \label{fig:ambienttalk-calc}
 \end{figure}
 
-In figure \ref{fig:ambienttalk-calc}, the REPL\footnote{Read Evaluate Print Loop} creates a
-new actor, sends it a message with a code block as the last parameter that allows it to
-print out the result.
+In figure \ref{fig:ambienttalk-calc}, the REPL\footnote{Read Evaluate Print Loop} creates a new actor, sends it a message with a code block as the last parameter that allows it to print out the result.
 
 \subsubsection{SALSA}
 
-The SALSA programming language (Simple Actor Language System and Architecture) is
-an actor-based language, which is compiled to Java source, then Java byte code, running
-on top of the JVM.
+The SALSA programming language (Simple Actor Language System and Architecture) is an actor-based language, which is compiled to Java source, then Java byte code, running on top of the JVM.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -330,43 +281,27 @@ behavior HelloWorld {
 \label{fig:salsa-helloworld}
 \end{figure}
 
-In figure \ref{fig:salsa-helloworld}\footnote{\url{http://wcl.cs.rpi.edu/salsa/demos/helloworld.htm}}
-we see how actors are utilised in SALSA.
-Messages can have an enforced partial-order, which is against the principle of the
-actor model (where messages can arrive in any order). SALSA solves this
-by grouping the messages into a single message before sending them to the
-other actor. This allows a programmer to specify partial orderings in the
-messages, which is very useful for tasks relating to I/O.
+In figure \ref{fig:salsa-helloworld}\footnote{\url{http://wcl.cs.rpi.edu/salsa/demos/helloworld.htm}} we see how actors are utilised in SALSA.
+Messages can have an enforced partial-order, which is against the principle of the actor model (where messages can arrive in any order).
+SALSA solves this by grouping the messages into a single message before sending them to the other actor.
+This allows a programmer to specify partial orderings in the messages, which is very useful for tasks relating to I/O.
 
 \subsection{Language Features}
 
 \subsubsection{Current Solutions to Object Cloning}
 
-In Java, object cloning is achieved by implementing the $Cloneable$ interface
-\footnote{\url{http://download.oracle.com/javase/7/docs/api/java/lang/Cloneable.html}},
-which gives the class a $clone()$ method, which if no direct implementation is given,
-will do a "shallow copy" by copying all of the fields in the original object to the new object.
+In Java, object cloning is achieved by implementing the $Cloneable$ interface \footnote{\url{http://download.oracle.com/javase/7/docs/api/java/lang/Cloneable.html}}, which gives the class a $clone()$ method, which if no direct implementation is given, will do a "shallow copy" by copying all of the fields in the original object to the new object.
 
-If this method is overridden, the class provide its own mechanisms after calling $super.clone()$
-such as duplicating some fields, or creating a new unique-identifier.
+If this method is overridden, the class provide its own mechanisms after calling $super.clone()$ such as duplicating some fields, or creating a new unique-identifier.
 
-In C++, classes can define a copy constructor or the compiler will automatically generate
-one\cite{ansi:03:c++}, which specifies which fields to copy and in the case of the compiler generated
-version which will do a shallow copy of all of the fields. 
+In C++, classes can define a copy constructor or the compiler will automatically generate one\cite{ansi:03:c++}, which specifies which fields to copy and in the case of the compiler generated version which will do a shallow copy of all of the fields. 
 
 \subsubsection{Current Solutions to Serialisation}
 
-In Java, serialisation is achieved automatically by implementing the $java.io.Serializable$
-\footnote{\url{http://docs.oracle.com/javase/7/docs/api/java/io/Serializable.html}} interface, which allows
-the saving or sending of an object and its contents. C and C++ do not have such easily utilisable
-methods in their standard libraries.
+In Java, serialisation is achieved automatically by implementing the $java.io.Serializable$ \footnote{\url{http://docs.oracle.com/javase/7/docs/api/java/io/Serializable.html}} interface, which allows the saving or sending of an object and its contents.
+C and C++ do not have such easily utilisable methods in their standard libraries.
 
-In the .net framework, a class can become serialisable by adding the $Serializable$\footnote{
-\url{http://msdn.microsoft.com/en-us/library/ms973893.aspx}} attribute to the
-class, if (in the future) new members are added to the class, they can be tagged with the 
-$OptionalField$ attribute\footnote{\url{
-http://msdn.microsoft.com/en-us/library/system.runtime.serialization.optionalfieldattribute.aspx}},
-allowing older versions of the object in question to be deserialized without problem.
+In the .net framework, a class can become serialisable by adding the $Serializable$\footnote{\url{http://msdn.microsoft.com/en-us/library/ms973893.aspx}} attribute to the class, if (in the future) new members are added to the class, they can be tagged with the $OptionalField$ attribute\footnote{\url{http://msdn.microsoft.com/en-us/library/system.runtime.serialization.optionalfieldattribute.aspx}}, allowing older versions of the object in question to be deserialized without problem.
 
 \subsubsection{Current Solutions to Stringability}
 
@@ -374,13 +309,11 @@ More research needed still
 
 \subsection{Type-based Solutions to Safe Concurrency}
 
-There are alternatives to using modal references for making concurrency safer,
-which have their own advantages and disadvantages, as discussed below.
+There are alternatives to using modal references for making concurrency safer, which have their own advantages and disadvantages, as discussed below.
 
 \subsubsection{Ownership Types}
 
-Ownership types, first described by Clarke\cite{clarke1998}, are an attempt to prevent aliasing-based
-failures of encapsulation.
+Ownership types, first described by Clarke\cite{clarke1998}, are an attempt to prevent aliasing-based failures of encapsulation.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -396,11 +329,9 @@ failures of encapsulation.
 \label{fig:encapsulation}
 \end{figure}
 
-In fig \ref{fig:encapsulation}, encapsulation has been violated, the receiver is
-free to modify $list$ in whatever way it likes.
+In fig \ref{fig:encapsulation}, encapsulation has been violated, the receiver is free to modify $list$ in whatever way it likes.
 
-Ownership types can be seen as a form of dependent typing, enforcing
-several properties about an object:
+Ownership types can be seen as a form of dependent typing, enforcing several properties about an object:
 
 \begin{itemize}
 \item Every object has an owner (being another object)
@@ -431,17 +362,13 @@ digraph Immutability {
 \label{fig:ownership-hierachy}
 \end{figure}
 
-Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node
-is an object, their contents describing their address, class and owner\footnote{Eg 5:B<2> is
-an object at address 5, of class C owned by the object at address 2}, edges are
-field references.
+Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner\footnote{Eg 5:B\<2\> is an object at address 5, of class C owned by the object at address 2}, edges are field references.
 
 We can represent ownership as sets:
-$\>\>2.owned=\{4,5\}\>\>2.owned^{*}=\{4,5,7\}\>\>5.owned=\{6,7\}$
+$\>\>2.owned=\{4,5\},\>\>2.owned^{*}=\{4,5,7\},\>\>5.owned=\{6,7\}$
 \\(where $owned^{*}$ is everything in the tree below the object.
 
-By general intuition, if $x$ and $y$ are not aliases, and neither owns the other, then
-$x.owned^{*} \cap x.owned^{*} = \emptyset$
+By general intuition, if $x$ and $y$ are not aliases, and neither owns the other, then $x.owned^{*} \cap x.owned^{*} = \emptyset$
 
 We can view ownership types as an alternative method of describing uniqueness,
 where the owner of a reference is the same a unique reference. This confers similar
