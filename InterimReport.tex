@@ -58,7 +58,7 @@ In his thesis, Agha\cite{agha1985} stated that actors can:
 
 \subsubsection{History}
 
-Actors were first introduced in 1973\cite{hewitt1973} and were inspired by physics and by the real world (compared to other models for concurrency, which were based on mathematical models such as set theory\cite{hewitt2006}).
+Actors were first introduced in 1973\cite{hewitt1973} and were inspired by physics and by the real world\cite{hewitt2006} (compared to other models for concurrency, which were based on mathematical models such as set theory\cite{Milner:1993:EIT:151233.151240}).
 Several languages, such as Simula (1967) and Smalltalk (1971-72), had some of the first message passing semantics, but the message passing was not designed for actors, but rather as part of their object-orientation, with the messages being sent synchronously, rather than asynchronously.
 
 Actors were formally defined in 1973-1977, though Greif's operational semantics for actors\cite{grief1975} and Baker and Hewitt's Laws for Actors in 1977\cite{hewitt1977}.
@@ -72,20 +72,27 @@ Erlang is dynamically typed, runs on its own virtual machine with its own eco-sy
 Scala and Erlang both have their own implementation of actors, the semantics of both being more or less the same, however there are some differences. 
 For example in Erlang, multiple processes in the same VM\footnote{Virtual Machine} can easily share the same data because the language will guarantee this data is immutable.
 In Scala this is not possible, since you can easily send a mutable reference to another actor - which can lead to race conditions.
-Scala is a type-safe language, meaning that code is much easier to error-check, whereas Erlang has only limited type-safety.
+Scala is a type-safe language, with code being error-checked at compile time for many different problems (such as adding a Boolean to an Int), whereas Erlang has only limited type-safety.
 
 Actors can communicate locally (i.e. running on the same machine) or via a network, typically using a protocol over TCP/IP.
 
 Pony attempts to take the best parts to these two approaches, with some additional advantages.
 
-\subsubsection{Join Calculus}
+\subsubsection{Process Calculi}
 
-The join calculus is a process calculus, developed to formally model the design of distributed programming languages\cite{fournet1996}.
-It avoids some of the problems involved with the $\pi$ calculus\cite{milner1989}, which is mostly based on atomic non-local interactions, and these are difficult to implement in a real system.
-Programming languages which use actors have separate mechanisms for transmission and synchronisation/locking.
+Process calculi are formal models, to help with the design of concurrent systems.
+The first process calculus was CSP (Communicating Sequential Processes), developed by Hoare in 1978\cite{hoare1978}.
+Unlike later process calculi, it was designed as programming language, rather than as a mathematical model.
+It has some key differences to the actor-model, for example processes in CSP are anonymous, whereas in the actor-model processes have identities.
+In CSP messages are sent synchronously and in the actor-model they are sent asynchronously.
+
+The $\pi$ calculus, a process calculi, was partly inspired by the actor model, but still had several key differences - communication is named in both, however in the $\pi$ calculus communication is done over channels, rather than the more direct method used by actors.
+
+The join calculus is another process calculus, developed to formally model the design of distributed programming languages\cite{fournet1996}.
+It tried to avoid some of the problems involved with the $\pi$ calculus\cite{milner1989}, which is based on atomic non-local interactions and are difficult to implement in a real system.
 
 The calculus can be seen as an asynchronous version of the $\pi$ calculus, with several strong restrictions\cite{fournet1996}:
-\begin{enumerate}
+\begin{enumerate}[noitemsep]
 	\item Scope restriction, reception, and replicated reception are syntactically merged into a single construct, called the definition.
 	\item Communication can only occur on defined names.
 	\item For every defined name there is exactly one replicated reception.
@@ -95,15 +102,13 @@ These restrictions state, in precise language, that the "processes" in the join 
 
 This calculus can be used to help design, model and implement the semantics of an actor-based programming language.
 
-// More detail here
-
 \subsubsection{Concurrency Orientated Programming}
-Concurrency Orientated Programming\cite{armstrong2007} (or COP) is a programming paradigm that states that the design of a program should be based on concurrency patterns inherent in the problem.
+Concurrency Orientated Programming\cite{armstrong2007} (or COP) states that the design of a program should be based on concurrency patterns inherent in the problem.
 The main ideas behind COP are:
 \begin{itemize}
-\item Systems are built from processes
-\item Processes share nothing by default
-\item Processes interact by sending and receiving asynchronous messages
+\item Systems are built from processes,
+\item Processes share nothing by default,
+\item Processes interact by sending and receiving asynchronous messages,
 \item Processes are isolated.
 \end{itemize}
 
@@ -114,9 +119,9 @@ Sharing immutable data between processes is fine, since this can be modelled as 
 
 The Actor-Model can be used to help model and reason about many different concurrent systems, for example:
 
-\begin{itemize}
-\item Web services with the endpoints as separate actors
-\item Email, with different accounts being different actors
+\begin{itemize}[noitemsep]
+\item Web services with the endpoints as separate actors,
+\item Email, with different accounts being different actors,
 \item GUI programming, where the view, model and controller are separate actors 	 each passing messages to each other.
 \end{itemize}
 
@@ -132,9 +137,9 @@ In the 1980s telephony requirements were atypical to those of other industries, 
 It was a requirement that the system be very tolerant of faults and allow on-the-fly upgrades without system downtime.
 It turns out all of these requirements map very easily and effectively onto the actor-model.
 
-Erlang is now used across industry for so-called "soft real-time" programming in many different areas, including (but not limited to) telecoms (at T-Mobile, Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat, Trading (Goldman Sachs and Smarkets) and online games (Call of Duty and Battlestar Galactica).
+Erlang is now used across industry for so-called "soft real-time" programming in many different areas, including (but not limited to) telecoms (at T-Mobile, Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat, Trading (Goldman Sachs and Smarkets) and servers for online games (Call of Duty and Battlestar Galactica).
 
-Erlang has a very different syntax to most other programming languages, taking inspiration from Prolog (and in fact the original Erlang interpreter was written in Prolog), which has been a reason for its low popularity.
+Erlang's syntax, which took inspiration from Prolog, (and in fact the original Erlang interpreter was written in Prolog), is very different from most other programming languages and may have been a reason for its low popularity.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -175,7 +180,7 @@ Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show
 Scala is a programming language, developed at EPFL\footnote{École polytechnique fédérale de Lausanne} in Switzerland, which was designed to be a successor to Java, integrating functional alongside object-orientated programming.
 It includes a myriad of orthogonal features, including anonymous functions, lazy initialisation, pattern-matching, continuations, type inference and operator overloading.
 
-Scala has significant library support for actors, with the Akka framework. Originally there were two libraries, scala.actors and akka.actors, with scala.actors being replaced with akka actors in 2.10\footnote{\url{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html}}, both frameworks were designed to look like Erlang syntax using operator overloading.
+Scala has significant library support for actors, with the Akka framework. Originally there were two libraries, scala.actors and akka.actors, with scala.actors being replaced with akka actors in 2.10\footnote{\url{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html}}, both frameworks were designed to look like Erlang syntax using operator overloading. Akka includes a large amount of documentation, as well as commercial support for businesses looking to use Akka-style actors, it also includes several different kinds of actors (Actors (standard actor), Typed Actors (a more restrictive actor, with static context) and Remote Actors (which can run on remote machines)) and provides a complete system for using actors.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -214,6 +219,7 @@ Figure \ref{fig:scala-ping-pong} shows an example usage of Akka actors, where tw
 This style of code is more familiar to developers who have experience in languages such as Java.
 
 \subsubsection{AmbientTalk}
+\label{sec:ambienttalk}
 
 AmbientTalk is an experimental language, developed at Vrije Universiteit Brussel, designed to write distributed software across low quality wireless networks.
 Its design was strongly influenced by SmallTalk (block closures, keyworded messages), with its concurrency model based on the actor-model supporting futures and event-loops.
@@ -281,8 +287,7 @@ behavior HelloWorld {
 \label{fig:salsa-helloworld}
 \end{figure}
 
-In figure \ref{fig:salsa-helloworld}\footnote{\url{http://wcl.cs.rpi.edu/salsa/demos/helloworld.htm}} we see how actors are utilised in SALSA.
-Messages can have an enforced partial-order, which is against the principle of the actor model (where messages can arrive in any order).
+In figure \ref{fig:salsa-helloworld}\footnote{\url{http://wcl.cs.rpi.edu/salsa/demos/helloworld.htm}} we see how actors are utilised in SALSA: messages can have an enforced partial-order, which is against the principle of the actor model (where messages can arrive in any order).
 SALSA solves this by grouping the messages into a single message before sending them to the other actor.
 This allows a programmer to specify partial orderings in the messages, which is very useful for tasks relating to I/O.
 
@@ -333,15 +338,15 @@ In fig \ref{fig:encapsulation}, encapsulation has been violated, the receiver is
 
 Ownership types can be seen as a form of dependent typing, enforcing several properties about an object:
 
-\begin{itemize}
-\item Every object has an owner (being another object)
+\begin{itemize}[noitemsep]
+\item Every object has an owner, which is another object.
 \item Ownership is acyclic (there are no cycles in an ownership graph)
-\item These two properties organise the heap into a tree-structure
 \end{itemize}
+These two properties organise the heap into a tree-structure
 
 \begin{figure}[H]
 \begin{center}
-\begin{dot2tex}[dot,options=-tmath]
+\begin{dot2tex}[dot,options=-tmath,scale=0.5]
 digraph Immutability {
 	1 [shape=ellipse,label="1:Object"];
 	2 [shape=ellipse,label="2:A<1>"];
@@ -362,38 +367,78 @@ digraph Immutability {
 \label{fig:ownership-hierachy}
 \end{figure}
 
-Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner\footnote{Eg 5:B\<2\> is an object at address 5, of class C owned by the object at address 2}, edges are field references.
+Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner\footnote{Eg 5:$B<2>$ is an object at address 5, of class C owned by the object at address 2}, edges are field references.
 
 We can represent ownership as sets:
-$\>\>2.owned=\{4,5\},\>\>2.owned^{*}=\{4,5,7\},\>\>5.owned=\{6,7\}$
-\\(where $owned^{*}$ is everything in the tree below the object.
+$\/2.owned=\{4,5\}$, $2.owned^{*}=\{4,5,7\}$ and $5.owned=\{6,7\}$\footnote{where $owned^{*}$ is everything in the tree below the object.}
 
 By general intuition, if $x$ and $y$ are not aliases, and neither owns the other, then $x.owned^{*} \cap x.owned^{*} = \emptyset$
 
-We can view ownership types as an alternative method of describing uniqueness,
-where the owner of a reference is the same a unique reference. This confers similar
-advantages to unique references: easier parallelism, concurrency and reasoning.
+An object, $a'$, is said to be dominated by another object, $a,$ at a point in execution $iff$ all paths from the root object to $a'$ go through $a$.
+
+We can view ownership types as an alternative method of describing uniqueness, where the owner of a reference is the same a unique reference.
+This confers similar advantages to unique references: easier parallelism, concurrency and reasoning.
 
 If $x.y$ and $x.z$ are not in each others ownership sets, then $x.y.method$ will maintain
 all properties about $x.z$ (and vice versa).
 
-There are some disadvantages to this approach, for example transferring ownership of an
-object from one object to another is not easy in a static type system\cite{clarke1998}. There
-is also a complexity overhead of annotating code with the specific owner of the code.
+There are some disadvantages to this approach, for example transferring ownership of an object from one object to another is not easy in a static type system\cite{clarke1998}.
+There is also a complexity overhead of annotating code with the specific owner of the code.
 
 \subsubsection{Cyclone}
 
 \subsubsection{Regions}
 
+\section{Architecture}
+
+When designing the compiler, it will be necessary to decide what processor architecture to compile to, taking into account complexity, performance, debugging and tool availability.
+
+\subsection{x86}
+
+x86, and its 64-bit counter-part x86\textunderscore64, is the primary instruction set used on desktop machines. It has a wider array of development tools, documentation and support available.
+Almost all the x86\textunderscore64 processors available on the market are multi-core, meaning that an actor-model language would see performance benefits from concurrent execution, allowing us to more easily demonstrate the performance benefits of the language.
+x86, however, is difficult to write a faster compiler for because of the large number of instructions and complexity of the architecture.
+
+\subsection{ARM}
+
+The ARM ISA\footnote{Instruction Set Architecture} is the most popular architecture in terms of sheer numbers in use today, with 6.1 billion ARM chips being shipped in 2010\cite{theregister2011}.
+The architecture is RISC\footnote{Reduced instruction set computing}, meaning writing a compiler targeting the architecture is much simpler, as there are fewer instructions and the complexity of the code generator is reduced.
+However most of the 6 billion chips are low-powered and in devices such as set-top boxes, which are not suited for high-performance computing. It could be beneficial to target ARM if we were going to implement actors in a similar fashion to in AmbientTalk\ref{sec:ambienttalk}, for handling distributed actors over poor connections.
+
+\subsection{JVM or CLR}
+
+Targeting the JVM or CLR\footnote{Common Language Runtime} would be very useful, as it would be mean we would not need to worry about manually managing memory or simple optimisations and the VM would be able to optimise them out at run time, for only a small performance hit.
+Unfortunately this is not a route we wish to take on this project, as we do not want the overhead of running on top of a VM.
+
+\subsection{C}
+
+Translating Pony code into C, before compiling with GCC/Clang would be very beneficial for a large number of reasons:
+\begin{itemize}[noitemsep]
+\item Fast - allowing a C compiler with many years of research to optimise our code would significantly reduce the complexity of the compiler.
+\item Debugging support - the C compiler would be able to emit warnings and errors that the Pony compiler might have missed.
+\item Cross-platform - as long as the C compiler could target the architecture in question, we would be able to compile Pony to that platform.
+\end{itemize}
+
+However, the debugging support listed as an advantage is unlikely to be very helpful, since this is likely to confuse developers if the "Pony" compiler suddenly starts complaining about error messages in the C code produced.
+
+\subsection{LLVM}
+
+LLVM\footnote{Low Level Virtual Machine} is a compiler infrastructure project developed at the University of Illinois as a way to help investigate dynamic compilation techniques\cite{Lattner:MSThesis02}.
+LLVM consists of various front-ends, which translate different programming languages into LLVM IR\footnote{Intermediate Representation}, along with optimisers and code generators.
+LLVM has many advantages over other, more traditional compilation options:
+\begin{itemize}[noitemsep]
+\item Performance - LLVM can perform many standard optimisations, as well as lower level register allocation optimisations
+\item Cross-platform, LLVM can target almost every major ISA in use today\cite{llvm-svn}, with no front-end changes required.
+\item Debugging support - LLVM intrinsics allow use to use tools such as GDB/LLDB to step through a currently running program, with source code representations of the software shown.
+\item Ease of use - LLVM has extensive documentation and removes much of the work needed to write a compiler, reducing it to lexing, parsing, type-checking and minimal code generation.
+\end{itemize}
+
+
 \section{Pony}
 
-This project will focus on designing and creating a new programming
-language called Pony, that will introduce a relatively novel kind of type system,
-determining mutability, immutability and uniqueness. This language will treat
-actors as first class members and will have several relatively unexplored
-features for a programming language, including no inheritance (but with traits
-to allow code reuse), a feature being called partial objects and referential
-immutability expressed in the type system.
+This project will focus on designing and creating a new programming language called Pony, that will introduce a relatively novel kind of type system, determining mutability, immutability and uniqueness.
+This language will treat actors as first class members and will have several relatively unexplored features for a programming language, including no inheritance (but with traits to allow code reuse), a feature called partial objects and referential immutability expressed in the type system. 
+In order to garbage collect actors, Pony will break the "no ordering guarantee" aspect of the actor-model (as described in Agha's thesis\cite{agha1985}).
 
 Pony will be a:
 \begin{itemize}[noitemsep]
@@ -406,23 +451,18 @@ Pony will be a:
 \item actor-model programming language.
 \end{itemize}
 It will be a "pure" object-orientated language in that every value is an object.
-It will be a functional language in that every function is a value, with
-Algebraic Datatypes as first class members of the language. It will be strongly
-typed, with local type-inference\footnote{However given that we will be aiming
-for a closed-world compilation, we could do some level of global inference}.
+It will be a functional language in that every function is a value, with Algebraic Datatypes as first class members of the language.
+It will be strongly typed, with local type-inference\footnote{However given that we will be aiming for a closed-world compilation, we could do some level of global inference}.
 
-There will be no class inheritance, which can cause code duplication. In Pony
-this problem will be solved with Scala-style traits/Ruby-style mixins. This
-means that types are composed\footnote{by mixing in multiple traits} rather than
-having a type hierarchy. Pony will have, built into its type-like system, a system
-for handling reference modes, which has a sub typing relationship.
+There will be no class inheritance.
+To avoid code duplication, Pony will use Scala-style traits/Ruby-style mixins.
+This means that types are composed\footnote{by mixing in multiple traits} rather than having a type hierarchy.
+Pony will have, built into its type-like system, a system for handling reference modes, which has a sub typing relationship.
 
-The syntax of Pony takes inspiration from languages such as Scala and Lua, with
-C style bracing and semi-colons. The grammar is still not fixed, with
-discussions on the language, grammar and semantics still on-going.
+The syntax of Pony takes inspiration from languages such as Scala and Lua, with C style bracing and semi-colons.
+The grammar is still not fixed, with discussions on the language, grammar and semantics still on-going.
 
-In contrast to Erlang and Scala, Pony will run natively, with only a small runtime
-for the actor-framework and garbage collection.
+In contrast to Erlang and Scala, Pony will run natively, with only a small runtime for the actor-framework and garbage collection.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -448,10 +488,9 @@ In this example several properties of Pony become visible:
 
 \subsection{Partial Objects}
 
-Partial objects are a unique feature of Pony and are a new concept. They are not
-created by the user, but automatically generated by the compiler. For the rest
-of this paper, I will express a partial object of type $T$
-as $\backslash T$
+Partial objects are a unique feature of Pony and are a new concept, used for cloning, stringifying and serialising objects.
+They are not created by the user, but automatically generated by the compiler.
+For the rest of this paper, I will express a partial object of type $T$ as $\backslash T$
 
 \begin{figure}[H]
 $T = (fieldId \to type) \times (function \to signature)\\$
@@ -469,14 +508,14 @@ become apparent later on in the report. This simple concept can be shown
 to easily solve problems such as cloning, serialisation and stringability. For
 now we will get a partial object by calling $reflect(pattern)$ where $pattern$
 is optional and specifies what fields are to be returned on $this$ (the default
-being all public fields), with $this$ being passed implicitly.
+being all public fields), which returns a partial object of type $this.type$.
 
 \begin{figure}[H]
 \begin{verbatim}
     function toString()->(r:String) {
         r = "";
         var mirror = reflect();
-        for name,value in mirrors.fields() {
+        for name,value in mirror.fields() {
             match value {
                 case substring as v:Stringable {
                     r = r + name ":\t" + value.toString() +"\n";
@@ -496,7 +535,7 @@ as the power of partial objects.
 \subsection{Modal References}
 \label{sec:immutability}
 
-An object can possess one of four qualifiers\cite{microsoft2012}
+A reference can possess one of four qualifiers\cite{microsoft2012}
 
 \begin{itemize}
 	\item Mutable - the "standard" reference to an object - mutation of the
@@ -512,7 +551,8 @@ An object can possess one of four qualifiers\cite{microsoft2012}
     references -- REPHRASE
 \end{itemize}
 
-Capabilities:
+Each qualifier carries with it a unique set of capabilities (what you can do with the reference in question).
+-- When we have decided on the sets insert them here --
 
 The "mode" of a reference (which can be seen as comparable to a file reading
 mode - read, write etc) dictates what can be done to that object. Objects can be
@@ -521,7 +561,7 @@ downcasting is not permitted, as this violates capability constraints.
 
 \begin{figure}[H]
 \begin{center}
-\begin{dot2tex}[dot,options=-tmath]
+\begin{dot2tex}[dot,options=-tmath,scale=0.5]
 digraph Immutability {
   rankdir=BT;
   mutable	-> readonly;
@@ -591,7 +631,7 @@ reference.
 
 \subsection{Investigation}
 The first step of the project will be an investigation into the design of
-programming languages, and will look at which features could be useful, targeting
+programming languages, and I will look at which features could be useful, targeting
 specific areas where Pony will be used. It will also look at the style of code that
 programmers want to write in the language. An investigation into LLVM and the
 Intermediate Representation it uses will also be necessary.
