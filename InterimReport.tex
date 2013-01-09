@@ -47,7 +47,7 @@ For my project I will investigate, design and implement an actor-model programmi
 Actors can be used to model large numbers of different concurrent processes in a logical and realistic manner, in which actors are a primitive in concurrency.
 In fact the actor-model can be seen as a continuation of OO message-passing, where objects exist on different threads.
 Actors have a mailbox and can send and receive messages, and can react to those messages in a variety of different ways.
-The idea behind the actor-model is that there is no global state, instead each actor has its own local state and can only affect the state of other actors by sending them messages.
+The main idea behind the actor-model is that there is no global state, and instead each actor has its own local state and can only affect the state of other actors by sending them messages.
 
 In his thesis, Agha\cite{agha1985} stated that actors can:
 \begin{enumerate}[noitemsep]
@@ -71,7 +71,7 @@ Erlang is dynamically typed, runs on its own virtual machine with its own eco-sy
 
 Scala and Erlang both have their own implementation of actors, the semantics of both being more or less the same, however there are some differences. 
 For example in Erlang, multiple processes in the same VM\footnote{Virtual Machine} can easily share the same data because the language will guarantee this data is immutable.
-In Scala this is not possible, since you can easily send a mutable reference to another actor - which can lead to race conditions.
+In Scala this is not possible, since you can easily send a mutable reference to another actor - which can lead to race conditions\cite{akka-mutable}.
 Scala is a type-safe language, with code being error-checked at compile time for many different problems (such as adding a Boolean to an Int), whereas Erlang has only limited type-safety.
 
 Actors can communicate locally (i.e. running on the same machine) or via a network, typically using a protocol over TCP/IP.
@@ -82,14 +82,14 @@ Pony attempts to take the best parts to these two approaches, with some addition
 
 Process calculi are formal models, to help with the design of concurrent systems.
 The first process calculus was CSP (Communicating Sequential Processes), developed by Hoare in 1978\cite{hoare1978}.
-Unlike later process calculi, it was designed as programming language, rather than as a mathematical model.
+Unlike later process calculi, CSP was designed as programming language, rather than as a mathematical model.
 It has some key differences to the actor-model, for example processes in CSP are anonymous, whereas in the actor-model processes have identities.
 In CSP messages are sent synchronously and in the actor-model they are sent asynchronously.
 
-The $\pi$ calculus, a process calculi, was partly inspired by the actor model, but still had several key differences - communication is named in both, however in the $\pi$ calculus communication is done over channels, rather than the more direct method used by actors.
+The $\pi$ calculus, a process calculi, was partly inspired by the actor model, but still had several important differences - communication is named in both, however in the $\pi$ calculus communication is done over channels, rather than the more direct method used by actors.
 
-The join calculus is another process calculus, developed to formally model the design of distributed programming languages\cite{fournet1996}.
-It tried to avoid some of the problems involved with the $\pi$ calculus\cite{milner1989}, which is based on atomic non-local interactions and are difficult to implement in a real system.
+The join calculus is another process calculus, developed to help formally model the design of distributed programming languages\cite{fournet1996}.
+It tried to avoid some of the problems involved with the $\pi$ calculus\cite{milner1989}, which is based on atomic non-local interactions, making it difficult to implement in a real system.
 
 The calculus can be seen as an asynchronous version of the $\pi$ calculus, with several strong restrictions\cite{fournet1996}:
 \begin{enumerate}[noitemsep]
@@ -98,7 +98,7 @@ The calculus can be seen as an asynchronous version of the $\pi$ calculus, with 
 	\item For every defined name there is exactly one replicated reception.
 \end{enumerate}
 
-These restrictions state, in precise language, that the "processes" in the join calculus have definitions (which handle receiving input etc), that they can send messages to named definitions and that for each definition there is exactly one instance.
+These restrictions state, in precise language, that the "processes" in the join calculus have definitions (which handle receiving input and other tasks), that they can send messages to named definitions and that for each definition there is exactly one instance.
 
 This calculus can be used to help design, model and implement the semantics of an actor-based programming language.
 
@@ -125,7 +125,7 @@ The Actor-Model can be used to help model and reason about many different concur
 \item GUI programming, where the view, model and controller are separate actors 	 each passing messages to each other.
 \end{itemize}
 
-An advantage of actors allow you to think about concurrency on a more abstract level than approaches such as locking.
+An advantage of actors is that they allow you to think about concurrency on a more abstract level than approaches such as locking.
 
 \subsection{Actor-Based Languages}
 
@@ -139,7 +139,7 @@ It turns out all of these requirements map very easily and effectively onto the 
 
 Erlang is now used across industry for so-called "soft real-time" programming in many different areas, including (but not limited to) telecoms (at T-Mobile, Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat, Trading (Goldman Sachs and Smarkets) and servers for online games (Call of Duty and Battlestar Galactica).
 
-Erlang's syntax, which took inspiration from Prolog, (and in fact the original Erlang interpreter was written in Prolog), is very different from most other programming languages and may have been a reason for its low popularity.
+Erlang's syntax, which took inspiration from Prolog, (and in fact the original Erlang interpreter was written in Prolog), is very different from most other programming languages and may have been a reason for its relatively low popularity.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -177,7 +177,7 @@ Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show
 
 \subsubsection{Scala \& Akka}
 
-Scala is a programming language, developed at EPFL\footnote{École polytechnique fédérale de Lausanne} in Switzerland, which was designed to be a successor to Java, integrating functional alongside object-orientated programming.
+Scala is a programming language, developed at EPFL\footnote{\`{E}cole polytechnique fédérale de Lausanne} in Switzerland, which was designed to be a successor to Java, integrating functional alongside object-orientated programming.
 It includes a myriad of orthogonal features, including anonymous functions, lazy initialisation, pattern-matching, continuations, type inference and operator overloading.
 
 Scala has significant library support for actors, with the Akka framework. Originally there were two libraries, scala.actors and akka.actors, with scala.actors being replaced with akka actors in 2.10\footnote{\url{http://docs.scala-lang.org/overviews/core/actors-migration-guide.html}}, both frameworks were designed to look like Erlang syntax using operator overloading. Akka includes a large amount of documentation, as well as commercial support for businesses looking to use Akka-style actors, it also includes several different kinds of actors (Actors (standard actor), Typed Actors (a more restrictive actor, with static context) and Remote Actors (which can run on remote machines)) and provides a complete system for using actors.
@@ -428,7 +428,7 @@ LLVM consists of various front-ends, which translate different programming langu
 LLVM has many advantages over other, more traditional compilation options:
 \begin{itemize}[noitemsep]
 \item Performance - LLVM can perform many standard optimisations, as well as lower level register allocation optimisations
-\item Cross-platform, LLVM can target almost every major ISA in use today\cite{llvm-svn}, with no front-end changes required.
+\item Cross-platform, LLVM can target almost every major ISA in use today\cite{llvm-svn}, with no front-end changes required (as well as compiling "up" to higher-level languages such as Javascript.) 
 \item Debugging support - LLVM intrinsics allow use to use tools such as GDB/LLDB to step through a currently running program, with source code representations of the software shown.
 \item Ease of use - LLVM has extensive documentation and removes much of the work needed to write a compiler, reducing it to lexing, parsing, type-checking and minimal code generation.
 \end{itemize}
@@ -436,8 +436,8 @@ LLVM has many advantages over other, more traditional compilation options:
 
 \section{Pony}
 
-This project will focus on designing and creating a new programming language called Pony, that will introduce a relatively novel kind of type system, determining mutability, immutability and uniqueness.
-This language will treat actors as first class members and will have several relatively unexplored features for a programming language, including no inheritance (but with traits to allow code reuse), a feature called partial objects and referential immutability expressed in the type system. 
+This project will focus on designing and creating a new programming language called Pony, which will introduce a relatively novel kind of type system, determining mutability, immutability and uniqueness.
+This language will treat actors as first class members and will have several relatively unexplored features for a programming language, including no inheritance (but with traits to allow code reuse), a feature called partial objects and with referential immutability expressed in the type system. 
 In order to garbage collect actors, Pony will break the "no ordering guarantee" aspect of the actor-model (as described in Agha's thesis\cite{agha1985}).
 
 Pony will be a:
@@ -673,6 +673,34 @@ specification is formalised.
     	\item Use the actor framework to do parallel compilation and optimisation
 \end{enumerate}
 
+\subsection{Challenges}
+
+\subsubsection{Infrastructure}
+
+In order to explore the more interesting parts of this project, a fully working
+compiler needs to be constructed. This is obviously a large undertaking, and
+errors in the actual compiler could cause errors in the type system, making
+debugging considerably harder.
+
+The fact that this is a new programming language also means the tools are not very robust and the errors emitted by the compiler will be less clear and less informative\footnote{And sometimes not even correct error messages!} than in a more mature implementation.
+There will also only be a limited support network of two or three people at Imperial College London!
+
+\subsubsection{Technical Challenges}
+
+Problems that might arise directly related to the modal-type system
+	\begin{itemize}
+		\item How to interoperate with other LLVM code. For example if a
+		developer was using the OpenGL LLVM API, should we consider all return
+		values to be mutable? Or should we require users to provide wrappers
+		to the external code, annotating as appropriate.
+		\item Allowing casting. Should we allow an implicit conversion from
+              unique $\to$ mutable/immutable. Will there any problems related to
+              this?
+		\item Generic mode types - what is the most useful and readable manner
+              of representing generic modes and how should they be treated in
+              the type system.
+	\end{itemize}
+
 \section{Evaluation Plan}
 
 \subsection{Best case scenario}
@@ -756,45 +784,13 @@ with the only dependency being LLVM.
 \subsection{Current Progress}
 
 \begin{itemize}
-\item A grammar has been mostly agreed on, with some discussion still on-going
-	with respect to issues such as semi-colon line endings
-\item The C++ compiler has a hand-written lexer and parser, with custom error
-	messages.
-\item Semantic analyser has been written, checking the types and building a symbol table.
-\item Work towards a standard library, operations on primitive types, including
-	arrays.
+\item We have a grammar, which has been mostly agreed on, with some discussion still on-going
+	with respect to issues such as semi-colon line endings.
+\item We have written the first stages of the C++ compiler, with a lexer and parser.
+\item We have written a semantic analyser, checking the types and building a symbol table of a pony file.
+\item We have done work towards a standard library, including operations on primitive types, which
+	includes arrays.
 \end{itemize}
-
-\section{Challenges}
-
-\subsection{Infrastructure}
-
-In order to explore the more interesting parts of this project, a fully working
-compiler needs to be constructed. This is obviously a large undertaking, and
-errors in the actual compiler could cause errors in the type system, making
-debugging considerably harder.
-
-The fact that this is a new programming language also means the tools are not
-very robust and the errors emitted by the compiler will be less clear and less
-verbose\footnote{And sometimes not even correct error messages!} than if the
-type system was written in a more mature language. There will also only be
-a limited support network of two or three people at Imperial College London!
-
-\subsection{Technical Challenges}
-
-Problems that might arise directly related to the modal-type system
-	\begin{itemize}
-		\item How to interoperate with other LLVM code. For example if a
-		developer was using the OpenGL LLVM API, should we consider all return
-		values to be mutable? Or should we require users to provide wrappers
-		to the external code, annotating as appropriate.
-		\item Allowing casting. Should we allow an implicit conversion from
-              unique $\to$ mutable/immutable. Will there any problems related to
-              this?
-		\item Generic mode types - what is the most useful and readable manner
-              of representing generic modes and how should they be treated in
-              the type system.
-	\end{itemize}
 
 \bibliographystyle{plain}
 \bibliography{InterimReport}
