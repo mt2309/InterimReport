@@ -13,6 +13,8 @@
 \usetikzlibrary{shapes,arrows}
 \usepackage{enumitem}
 
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
 \usepackage[T1]{fontenc}
 \usepackage[sc]{mathpazo}
 
@@ -23,13 +25,46 @@
 
 \begin{document}
 
-\title{Pony - A Language for Truly Concurrent Computation}
+\begin{titlepage}
 
-\author{ 	Michael Thorpe\\
-		Imperial College London\\
-		michael.thorpe09@imperial.ac.uk}
+\begin{center}
 
-\maketitle
+% Upper part of the page
+\includegraphics[width=0.50\textwidth]{imperial_crest_colour.jpg}\\[1cm]    
+
+\textsc{\LARGE Imperial College London}\\[1.5cm]
+
+\textsc{\Large Final year project}\\[0.5cm]
+
+
+% Title
+\HRule \\[0.4cm]
+{ \huge \bfseries Pony - A Language for Truly Concurrent Computation}\\[0.4cm]
+
+\HRule \\[1.5cm]
+
+% Author and supervisor
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Author:}\\
+Michael \textsc{Thorpe}
+\end{flushleft}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Supervisor:} \\
+Professor Sophia \textsc{Drossopoulou}
+\end{flushright}
+\end{minipage}
+
+\vfill
+
+% Bottom of the page
+{\large \today}
+
+\end{center}
+
+\end{titlepage}
 
 \setcounter{tocdepth}{2}
 \tableofcontents
@@ -43,6 +78,11 @@ The Actor-Model solves some of these same problems, but actors can still modify 
 For my project I will investigate, design and implement an actor-model programming language, called Pony, which will address some of these problems.
 \end{abstract}
 
+\section{Introduction}
+\subsection{Motivation}
+\subsection{How to Read This Report}
+
+\newpage
 \section{Background}
 
 \subsection{Concurrency and The Actor-Model}
@@ -130,6 +170,7 @@ The Actor-Model can be used to help model and reason about many different concur
 
 An advantage of actors is that they allow you to think about concurrency on a more abstract level than approaches such as locking.
 
+\newpage
 \subsection{Actor-Based Languages}
 
 \subsubsection{Erlang}
@@ -307,6 +348,7 @@ In figure \ref{fig:salsa-helloworld} we see how actors are utilised in SALSA: me
 SALSA solves this by grouping the messages into a single message before sending them to the other actor.
 This allows a programmer to specify partial orderings in the messages, which is very useful for tasks relating to I/O.
 
+\newpage
 \subsection{Language Features}
 
 \subsubsection{Current Solutions to Object Cloning}
@@ -322,6 +364,7 @@ C and C++ do not have such easily utilisable methods in their standard libraries
 
 In the .net framework, a class can become serialisable by adding the $Serializable$\cite{net-serializable} attribute to the class, if (in the future) new members are added to the class, they can be tagged with the $OptionalField$ attribute\cite{net-optional}, allowing older versions of the object in question to be deserialized without problem.
 
+\newpage
 \subsection{Type-based Solutions to Safe Concurrency}
 
 There are alternatives to using modal references for making concurrency safer, which have their own advantages and disadvantages, as discussed below.
@@ -395,9 +438,15 @@ all properties about $x.z$ (and vice versa).
 There are some disadvantages to this approach, for example transferring ownership of an object from one object to another is not easy in a static type system\cite{clarke1998}.
 There is also a complexity overhead of annotating code with the specific owner of the code.
 
-\subsubsection{Regions}
+\subsubsection{Regions and X10}
 
-The Partitioned Global Address Space model\cite{pgas} 
+The Partitioned Global Address Space model\cite{pgas} is another parallel programming model, which assumes that the global address space is partitioned, with a portion of it assigned to each thread.
+This approach has some additional advantages, since each processor can exploit locality of reference.
+An object can be in either local memory (and therefore local to a thread) or else in the global address space, in the address space related assigned to the thread in question.
+X10 is a programming language developed at IBM, designed for very high powered computation, which uses the PGAS model.
+The language introduces higher-level concurrency constructs, such as atomic sections in place of locks, clocks instead of barriers and asynchronous operations in lieu of threads\cite{x10}.
+A computation in X10 is divided amongst a set of different places, where each places holds one or more activities that operates on the data stored in different storage classes.
+The different classes of storage are: activity-local, place-local (can be accessed by all activities executing in the same place), partitioned-global (in the global address space, accessible by activities in all places) and as values (stateless, immutable data)\cite{x10-places}.
 
 \subsubsection{Cyclone}
 
@@ -407,7 +456,7 @@ Concurrency in Cyclone is handled with a second-order type system, focussed arou
 Cyclone's type-system assigns each data object a lock, which a thread must hold access to when the object is accessed or mutated.
 Static analysis checks that a thread only access data $iff$ it holds the appropriate lock.
 
-
+\newpage
 \section{Architecture}
 
 When designing the compiler, it will be necessary to decide what processor architecture to compile to, taking into account complexity, performance, debugging and tool availability.
@@ -452,7 +501,7 @@ LLVM has many advantages over other, more traditional compilation options:
 \item Ease of use - LLVM has extensive documentation and removes much of the work needed to write a compiler, reducing it to lexing, parsing, type-checking and minimal code generation.
 \end{itemize}
 
-
+\newpage
 \section{Pony}
 
 This project will focus on designing and creating a new programming language called Pony, which will introduce a relatively novel kind of type system, determining mutability, immutability and uniqueness.
@@ -638,6 +687,7 @@ We can also recover uniqueness from a conversion to mutable/immutable, inside th
 
 This ability is very useful, since it means we can easily parallelise destructive operations on collections of unique objects, as each process can violate the uniqueness constraint, do the operation and return the unique reference.
 
+\newpage
 \section{Project Plan}
 
 \subsection{Investigation}
@@ -691,6 +741,7 @@ Problems that might arise directly related to the modal-type system
 		\item Generic mode types - what is the most useful and readable manner of representing generic modes and how should they be treated in the type system.
 	\end{itemize}
 
+\newpage
 \section{Evaluation Plan}
 
 \subsection{Best case scenario}
