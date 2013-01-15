@@ -3,9 +3,9 @@
 %%% TeX-master: t
 %%% End:
 
-\documentclass[pdftex,11pt,a4paper]{report}
+\documentclass[11pt,a4paper]{report}
 
-\usepackage{amsmath,amssymb,dot2texi,tikz,hyperref,enumitem}
+\usepackage{amsmath,amssymb,dot2texi,tikz,enumitem,hyperref,soul}
 \usetikzlibrary{shapes,arrows}
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
@@ -35,7 +35,7 @@
 
 % Title
 \HRule \\[0.4cm]
-{ \huge \bfseries Pony - A Language for Truly Concurrent Computation}\\[0.4cm]
+{ \huge \bfseries Pony - A Language for Concurrent Computation}\\[0.4cm]
 
 \HRule \\[1.5cm]
 
@@ -67,22 +67,13 @@ Professor Sophia \textsc{Drossopoulou}
 \tableofcontents
 
 \newpage
-\begin{abstract}
-
-Concurrent Programming is very hard to get right.
-Shared resources require semaphores, locking and monitors which are easy to get wrong and even these protections can introduce race conditions.
-The Actor-Model solves some of these same problems, but actors can still modify shared data and introduce data contention or get stuck in deadlock.
-For my project I will investigate, design and implement an actor-model programming language, called Pony, which will address some of these problems.
-\end{abstract}
-
 \chapter{Introduction}
-\section{Motivation}
 
 With the number of processors available to the programmer increasing every year\cite{freelunch}, there is a growing need for easier and safer parallelism.
-In the last year Intel have started shipping a 60-core processor, designed for use in HPC\footnote{High Performance Computing}\cite{intel-phi}, which shows a clear need for parallel programming.
+In the last year Intel started shipping a 60-core processor, designed for use in HPC\footnote{High Performance Computing}\cite{intel-phi}, which shows a clear need for parallel programming.
 There are many problems relating to concurrent programming, with errors being difficult to debug and the code being difficult to maintain, due to the non-determinism present in most concurrent systems.
-Problems range from: deadlock, where two processes are stuck waiting for each other to finish, to data races, where two processes attempt to read and modify the same data at the same time, causing unpredictable results.
-There are other, more human, problems involved in concurrency, as the thought processes required for developers to reason about concurrent programs are different from those of normal users.
+Problems range from deadlock, where two processes are stuck waiting for each other to finish, to data races, where two processes attempt to read and modify the same data at the same time, causing unpredictable results.
+There are other, more human, problems involved in concurrency, as the thought processes required for developers to reason about concurrent programs are different from those for sequential programming.
 
 There are many different solutions to these problems, across a wide range of research areas.
 Some approaches, such as locking and semaphores\cite{dijkstra-semaphore} leave the protection of data entirely up to the developer, whose responsibility it is to explicitly manage the concurrency.
@@ -90,12 +81,10 @@ Other approaches attempt to leverage existing research into other areas such as 
 
 However, many of these approaches are either very complicated, prone to errors or suffer from poor performance.
 We feel that there is an opportunity for a new language to be created, which will to be high performance and is safe and simple for developers to use.
-
-\section{How to Read This Report}
-
-This report is logically organised, and can be read in order.
+\\
+\\
 \begin{itemize}
-\item Chapter \ref{chapter:background} describes the relevant previous work in the field of concurrency and language design.
+\item Chapter \ref{chapter:background} describes the relevant previous work in the field of language design for concurrency.
 	We explore various methods of managing concurrency, such as the actor-model (section \ref{sec:actor}), ownership types (section \ref{sec:ownership}), regions (section \ref{sec:regions}) and the application of static analysis to locks (section \ref{sec:cyclone}).
 \item Chapter \ref{chapter:pony} describes the approaches we have already decided to take in the project and what research has been completed so far.
 \item Chapter \ref{chapter:project} details the current plan for the project, along with milestones, potential fallback positions and possible extensions to the project.
@@ -117,9 +106,9 @@ The main idea behind the actor-model is that there is no global state, and inste
 
 In his thesis, Agha\cite{agha1985} stated that actors can:
 \begin{enumerate}[noitemsep]
-\item Send a finite number of asynchronous, buffered messages to other actors, with guaranteed delivery but no ordering guarantees.
-\item Select the behaviour to be executed on receipt of the next message.
-\item Create a finite number of new actors.
+	\item Send a finite number of asynchronous, buffered messages to other actors, with guaranteed delivery but no ordering guarantees.
+	\item Select the behaviour to be executed on receipt of the next message.
+	\item Create a finite number of new actors.
 \end{enumerate}
 
 \subsection{History}
@@ -137,30 +126,30 @@ Erlang is dynamically typed, runs on its own virtual machine with its own eco-sy
 
 Scala and Erlang both have their own implementation of actors, the semantics of both being more or less the same.
 However there are some key differences.
-For example in Erlang, multiple processes in the same VM\footnote{Virtual Machine} can easily share the same data because the language will guarantee this data is immutable.
+For example in Erlang, multiple processes in the same VM\footnote{Virtual Machine} share nothing, data is shared by sending a deep copy of the data (or via .
 In Scala this is not possible, since you can easily send a mutable reference to another actor - which can lead to race conditions\cite{akka-mutable}.
 Scala is a type-safe language, with code being error-checked at compile time for many different problems (such as adding a Boolean to an Int), whereas Erlang has only limited type-safety.
 
 Actors can communicate locally (i.e. running on the same machine) or via a network, typically using a protocol over TCP/IP.
 
-Pony attempts to take the best parts of these two approaches, with some additional features also included.
+\hl{Pony attempts to take the best parts of these two approaches, with some additional features, such as the prevention of data races without the need for deep copying.}
 
 \subsection{Process Calculi}
 
-Process calculi are formal models, to help with the design of concurrent systems.
+Process calculi are formal models of concurrent systems.
 The first process calculus was CSP (Communicating Sequential Processes), developed by Hoare in 1978\cite{hoare1978}.
 Unlike later process calculi, CSP was designed as a programming language rather than as a mathematical model.
-It has some key differences to the actor-model, for example processes in CSP are anonymous whereas in the actor-model processes have identities.
-In CSP messages are sent synchronously and in the actor-model they are sent asynchronously.
+It has some key differences to the actor-model, for example processes in CSP are anonymous whereas in the actor-model processes have identities, and CSP messages are sent synchronously, while in the actor-model they are sent asynchronously.
 
-The $\pi$ calculus, a process calculi, was partly inspired by the actor model, but still has several important differences.
+The $\pi$ calculus\cite{milner1999communicating}, a process calculi, was partly inspired by the actor model, but still has several important differences.
 For example communication is named in both.
 However in the $\pi$ calculus communication is done over channels, rather than the more direct method used by actors.
 
 The join calculus is another process calculus, developed to help formally model the design of distributed programming languages\cite{fournet1996}.
+The join calculus is based on the CHemical Abstract Machine (or CHAM), which can be regarded as the computational model of the $\pi$ calculus.
 It tried to avoid some of the problems involved with the $\pi$ calculus\cite{milner1989}, which is based on atomic non-local interactions, making it difficult to implement in a real system.
 
-The join calculus can be seen as an asynchronous version of the $\pi$ calculus, with several strong restrictions\cite{fournet1996}:
+The reflexive CHemical Abstract Machine (or CHAM)\cite{fournet1996} can be seen as an asynchronous version of the $\pi$ calculus, with several strong restrictions:
 \begin{enumerate}[noitemsep]
 	\item Scope restriction, reception, and replicated reception are syntactically merged into a single construct, called the definition.
 	\item Communication can only occur on defined names.
@@ -169,12 +158,12 @@ The join calculus can be seen as an asynchronous version of the $\pi$ calculus, 
 
 These restrictions state, in precise language, that the "processes" in the join calculus have definitions (which handle receiving input and other tasks), that they can send messages to named definitions and that for each definition there is exactly one instance.
 
-This calculus can be used to help design, model and implement the semantics of an actor-based programming language.
+This calculus can be used to help design, model and implement an actor-based programming language, since it was designed for distributed, asynchronous concurrency\cite{fournet1996}.
 
 \subsection{Concurrency Orientated Programming}
 Concurrency Orientated Programming\cite{armstrong2007} (or COP) states that the design of a program should be based on concurrency patterns inherent in the problem.
 The main ideas behind COP are:
-\begin{itemize}
+\begin{itemize}[noitemsep]
 \item Systems are built from processes,
 \item Processes share nothing by default,
 \item Processes interact by sending and receiving asynchronous messages,
@@ -186,7 +175,7 @@ Sharing immutable data between processes is fine since this can be modelled as e
 
 \subsection{Use Cases for the Actor-Model}
 
-The Actor-Model can be used to help model and reason about many different concurrent systems, for example:
+The Actor-Model can be used to help model and reason about many different concurrent systems\cite{hewitt2006}, for example:
 
 \begin{itemize}[noitemsep]
 \item Web services with the endpoints as separate actors,
@@ -194,7 +183,7 @@ The Actor-Model can be used to help model and reason about many different concur
 \item GUI programming, where the view, model and controller are separate actors 	 each passing messages to each other.
 \end{itemize}
 
-An advantage of actors is that they allow you to think about concurrency on a more abstract level than approaches such as locking.
+An advantage of actors is that they allow you to think about concurrency on a more abstract level than approaches such as locking, since conditions like deadlock or race conditions do not occur, since there is no shared state.
 
 \newpage
 \section{Actor-Based Languages}
@@ -207,53 +196,55 @@ In the 1980s telephony requirements were atypical to those of other industries, 
 It was a requirement that the system be very tolerant of faults and allow on-the-fly upgrades without system downtime.
 It turns out all of these requirements map very easily and effectively onto the actor-model.
 
-Erlang is now used across industry for so-called "soft real-time" programming in many different areas, including (but not limited to) telecoms (at T-Mobile, Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat, Trading (Goldman Sachs and Smarkets) and servers for online games (Call of Duty and Battlestar Galactica).
+Erlang is now used across industry for so-called "soft real-time" programming in many different areas, including (but not limited to) telecoms (at T-Mobile, Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat, Trading (Goldman Sachs and Smarkets) and servers for online games (Call of Duty and Battlestar Galactica)\cite{erlang-uses}.
 
 Erlang's syntax, which took inspiration from Prolog, (and in fact the original Erlang interpreter was written in Prolog), is very different from most other programming languages, which may have been a reason for its relatively low popularity.
 
 \begin{figure}[H]
 \begin{verbatim}
-module(area).
--export([loop/1]).
-loop(Tot) ->
+-module(tut15).
+
+-export([start/0, ping/1, pong/0]).
+
+ping(Pong_PID) ->
+    Pong_PID ! {ping, self()},
     receive
-        {Pid, {square, X}} ->
-            Pid ! X*X,
-            loop(Tot + X*X);
-        {Pid, {rectangle,[X,Y]}} ->
-            Pid ! X*Y,
-            loop(Tot + X*Y);
-        {Pid, areas} ->
-end.
+        pong ->
+            io:format("Ping received pong", [])
+    end,
+    ping(Pong_PID).
+
+pong() ->
+    receive
+        finished ->
+            io:format("Pong finished", []);
+        {ping, Ping_PID} ->
+            io:format("Pong received ping", []),
+            Ping_PID ! pong,
+            pong()
+    end.
+
+start() ->
+    Pong_PID = spawn(tut15, pong, []),
+    spawn(tut15, ping, [Pong_PID]).
+    
 \end{verbatim}
-\caption{Area calculator server in Erlang}
-\label{fig:example_erlang_server}
+\caption{Erlang Ping Pong\cite{erlang-ping}}
+\label{fig:erlang-ping}
 \end{figure}
 
-\begin{figure}[H]
-\begin{verbatim}
-Pid = spawn(fun() -> area:loop(0) end),
-Pid ! {self(), {square, 10}},
-    receive
-        Area ->
-        ...
-end.
-\end{verbatim}
-\caption{Area calculator client in Erlang}
-\label{fig:example_erlang_client}
-\end{figure}
-
-Figures \ref{fig:example_erlang_server} and \ref{fig:example_erlang_client} show some examples of Erlang code - demonstrating some very different syntax and semantics to that which programmers usually expect from languages such as Java or C.
+Figure\ref{fig:erlang-ping} show some example Erlang code - demonstrating some very different syntax and semantics to that which programmers usually expect from languages such as Java or C.
+In Erlang, $spawn$ creates a new process, returning the PID of the process, $!$ sends a message to another process and receiving messages is handled by pattern matching.
 
 \subsection{Scala \& Akka}
 
-Scala is a programming language, developed at EPFL\footnote{\`{E}cole Polytechnique F\'{e}d\'{e}rale de Lausanne} in Switzerland, which was designed to be a successor to Java, integrating functional alongside object-orientated programming.
+The programming language Scala, developed at EPFL\footnote{\`{E}cole Polytechnique F\'{e}d\'{e}rale de Lausanne} in Switzerland, which was designed to be the successor to Java, integrating functional alongside object-orientated programming.
 It includes a myriad of orthogonal features, including anonymous functions, lazy initialisation, pattern-matching, continuations, type inference and operator overloading.
 
 Scala has significant library support for actors, with the Akka framework.
 Originally there were two competing actor implementations, scala.actors and akka.actors, with scala.actors being replaced with akka actors in version 2.10\cite{scala-actor-migration}.
 Both frameworks were designed to look like Erlang syntax using operator overloading.
-Akka includes a large amount of documentation, as well as commercial support for businesses looking to use Akka-style actors.
+Akka includes a large amount of documentation for using Akka-style actors.
 It also includes several different kinds of actors: Actors (standard actor), Typed Actors (a more restrictive actor, with static context) and Remote Actors (which can run on remote machines).
 The distribution provides a complete system for using actors in production environments.
 
@@ -296,10 +287,10 @@ This style of code is more familiar to developers who have experience in languag
 \subsection{AmbientTalk}
 \label{sec:ambienttalk}
 
-AmbientTalk is an experimental language, developed at Vrije Universiteit Brussel, designed to write distributed software across low quality wireless networks.
+AmbientTalk\cite{ambienttalk-failure} is an experimental language, developed at Vrije Universiteit Brussel, designed to write distributed software across low quality wireless networks.
 Its design was strongly influenced by SmallTalk (block closures, keyworded messages), with its concurrency model based on the actor-model which supports futures and event-loops.
 Its primary function is to experiment with new language features and abstractions to help design software which needs to run on highly volatile networks.
-The system will automatically buffer messages that the receiver fails to receive which means the programmer can abstract out temporary network failures\cite{ambienttalk-failure}.
+The system will automatically buffer messages that the receiver fails to receive which means the programmer can abstract out temporary network failures.
 AmbientTalk runs on top of the JVM, meaning that Java libraries can be used easily.
 The model is designed such that JVM threads cannot interfere with the concurrency inherent in Ambient Talk\cite{ambienttalk-interfere}
 
@@ -372,14 +363,12 @@ behavior HelloWorld {
 \label{fig:salsa-helloworld}
 \end{figure}
 
-In figure \ref{fig:salsa-helloworld} we see how actors are utilised in SALSA: messages can have an enforced partial-order, which is against the principle of the actor model (where messages can arrive in any order).
+In figure \ref{fig:salsa-helloworld} we see how actors are utilised in SALSA: messages can have an enforced partial order, which is against the principle of the actor model (where messages can arrive in any order).
 SALSA solves this by grouping the messages into a single message before sending them to the other actor.
 This allows a programmer to specify partial orderings in the messages, which is very useful for tasks relating to I/O.
 
 \newpage
 \section{Type-based Solutions to Safe Concurrency}
-
-There are alternatives to using modal references for making concurrency safer, which have their own advantages and disadvantages, as discussed below.
 
 \subsection{Ownership Types}
 \label{sec:ownership}
@@ -402,7 +391,7 @@ Ownership types, first described by Clarke\cite{clarke1998}, are an attempt to p
 
 In figure \ref{fig:encapsulation}, encapsulation has been violated, the receiver is free to modify $list$ in whatever way it likes.
 
-Ownership types can be seen as a form of dependent typing, enforcing several properties about an object:
+Ownership types can be seen as a form of dependent typing\cite{augustsson1999cayenne}(where types depend on values), enforcing several properties about an object:
 
 \begin{itemize}[noitemsep]
 \item Every object has an owner, which is another object.
@@ -433,17 +422,15 @@ digraph Immutability {
 \label{fig:ownership-hierachy}
 \end{figure}
 
-Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner\footnote{Eg 5:$B<2>$ is an object at address 5, of class C owned by the object at address 2} and each edge is a field reference.
+Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner (e.g. 5:$B<2>$ is an object at address 5, of class C owned by the object at address 2) and each edge is a field reference.
 
 We can represent ownership as sets:
-$\/2.owned=\{4,5\}$, $2.owned^{*}=\{4,5,7\}$ and $5.owned=\{6,7\}$\footnote{where $owned^{*}$ is everything in the tree below the object.}
+$\/2.owned=\{4,5\}$, $2.owned^{*}=\{4,5,7\}$ and $5.owned=\{6,7\}$\footnote{where $owned^{*}$ is everything in the tree below the object}.
+By general intuition, if $x$ and $y$ are not aliases, and neither owns the other, then $x.owned^{*} \cap x.owned^{*} = \emptyset$.
+An object, $a'$, is said to be dominated by another object, $a,$ at a point in execution if all paths from the root object to $a'$ go through $a$.
 
-By general intuition, if $x$ and $y$ are not aliases, and neither owns the other, then $x.owned^{*} \cap x.owned^{*} = \emptyset$
-
-An object, $a'$, is said to be dominated by another object, $a,$ at a point in execution $iff$ all paths from the root object to $a'$ go through $a$.
-
-We can view ownership types as an alternative method of describing uniqueness, where the owner of a reference is the same as having a unique reference.
-This confers similar advantages to unique references: easier parallelism, concurrency and reasoning.
+Ownership types confer several advantages: safer parallelism and reasoning.
+Safer parallelism\cite{boyapati2002ownership} can be achieved by ensuring that if a thread requires a lock on an object, it must first hold a lock on the root owner of the object.
 
 If $x.y$ and $x.z$ are not in each others ownership sets, then $x.y.method$ will maintain
 all properties about $x.z$ (and vice versa).
@@ -458,8 +445,8 @@ The Partitioned Global Address Space model\cite{pgas} is another parallel progra
 This approach has some additional advantages, since each processor can exploit locality of reference.
 An object can be in either local memory (and therefore local to a thread) or else in the global address space (in the address space related assigned to the thread in question).
 
-X10 is a programming language developed at IBM, designed for very high powered computation, which uses the PGAS model.
-The language introduces higher-level concurrency constructs, such as atomic sections in place of locks, clocks instead of barriers and asynchronous operations in lieu of threads\cite{x10}.
+X10\cite{x10} is a programming language developed at IBM, designed for very high powered computation, which uses the PGAS model.
+The language introduces higher-level concurrency constructs, such as atomic sections in place of locks, clocks instead of barriers and asynchronous operations in lieu of threads.
 A computation in X10 is divided amongst a set of different places, where each place holds one or more activities that operate on the data stored in different storage classes.
 The different classes of storage are: activity-local, place-local (can be accessed by all activities executing in the same place), partitioned-global (in the global address space, accessible by activities in all places) and as values (stateless, immutable data)\cite{x10-places}.
 
@@ -804,7 +791,7 @@ If we find we are running out of time, there are several different paths we coul
 	We could remove some of the features from the language, such as partial objects, which would reduce the amount of work needed for the project.
 	The obvious downside to this is that removing features makes the language less desirable and less useable.
 \item Use external standard library.
-	 Since we have chose to use LLVM, we can link with external libraries, removing the need for efficient, well tested library code written in Pony.
+	 Since we have chosen to use LLVM, we can link with external libraries, removing the need for efficient, well tested library code written in Pony.
 \end{itemize}
 
 \section{Current Progress}
