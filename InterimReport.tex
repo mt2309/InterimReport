@@ -12,6 +12,7 @@
 
 \usepackage[T1]{fontenc}
 \usepackage[sc]{mathpazo}
+\usepackage{fullpage}
 
 \usepackage{float}
 \floatstyle{boxed}
@@ -29,7 +30,7 @@
 
 \textsc{\LARGE Imperial College London}\\[1.5cm]
 
-\textsc{\Large Final year project}\\[0.5cm]
+\textsc{\Large Interim Report}\\[0.5cm]
 
 
 % Title
@@ -42,7 +43,7 @@
 \begin{minipage}{0.4\textwidth}
 \begin{flushleft} \large
 \emph{Author:}\\
-Michael \textsc{Thorpe}
+Michael \textsc{Thorpe}\\
 \href{mailto:mt2309@ic.ac.uk}{mt2309@ic.ac.uk}
 \end{flushleft}
 \end{minipage}
@@ -78,8 +79,8 @@ For my project I will investigate, design and implement an actor-model programmi
 \section{Motivation}
 
 With the number of processors available to the programmer increasing every year\cite{freelunch}, there is a growing need for easier and safer parallelism.
-In the last year Intel have started shipping a 60-core processor, designed for use in High Performance Computing\cite{intel-phi}, which shows a clear need for parallel programming.
-There are many problems relating to both concurrent and parallel programming, with mistakes being difficult to debug and maintain, due to the non-determinism present in most parallel systems.
+In the last year Intel have started shipping a 60-core processor, designed for use in HPC\footnote{High Performance Computing}\cite{intel-phi}, which shows a clear need for parallel programming.
+There are many problems relating to concurrent programming, with errors being difficult to debug and the code being difficult to maintain, due to the non-determinism present in most concurrent systems.
 Problems range from: deadlock, where two processes are stuck waiting for each other to finish, to data races, where two processes attempt to read and modify the same data at the same time, causing unpredictable results.
 There are other, more human, problems involved in concurrency, as the thought processes required for developers to reason about concurrent programs are different from those of normal users.
 
@@ -88,7 +89,7 @@ Some approaches, such as locking and semaphores\cite{dijkstra-semaphore} leave t
 Other approaches attempt to leverage existing research into other areas such as utilising types or other forms of static analysis.
 
 However, many of these approaches are either very complicated, prone to errors or suffer from poor performance.
-We feel that there is an opportunity for a new language to be created, which attempts to be high performance, safe and simple for developers to use.
+We feel that there is an opportunity for a new language to be created, which will to be high performance and is safe and simple for developers to use.
 
 \section{How to Read This Report}
 
@@ -96,8 +97,10 @@ This report is logically organised, and can be read in order.
 \begin{itemize}
 \item Chapter \ref{chapter:background} describes the relevant previous work in the field of concurrency and language design.
 	We explore various methods of managing concurrency, such as the actor-model (section \ref{sec:actor}), ownership types (section \ref{sec:ownership}), regions (section \ref{sec:regions}) and the application of static analysis to locks (section \ref{sec:cyclone}).
-\item Chapter \ref{chapter:pony} describes the approaches we have already decided to take in the project, what work has been completed so far and what further work needs to be done.
-	We outline milestones, fall-back positions as well as potential extensions to the project if there is sufficient time.
+\item Chapter \ref{chapter:pony} describes the approaches we have already decided to take in the project and what research has been completed so far.
+\item Chapter \ref{chapter:project} details the current plan for the project, along with milestones, potential fallback positions and possible extensions to the project.
+	It also states what work we have already completed on the project, along with the challenges we expect to encounter.
+\item Chapter \ref{chapter:evaluation} explains how we plan on evaluating the project, we discuss both human and technical evaluations with best case scenarios as well as more realistic expectations.
 \end{itemize}
 
 \newpage
@@ -125,36 +128,39 @@ Actors were first introduced in 1973\cite{hewitt1973} and were inspired by physi
 Several languages, such as Simula (1967) and Smalltalk (1971-72), had some of the first message passing semantics, but the message passing was not designed for actors, but rather as part of their object-orientation, with the messages being sent synchronously, rather than asynchronously.
 
 Actors were formally defined in 1973-1977, though Greif's operational semantics for actors\cite{grief1975} and Baker and Hewitt's Laws for Actors in 1977\cite{hewitt1977}.
-However the actor-model did not, and indeed has not, gain much popularity, with Mackay\cite{mackay97} claiming that actors did not catch on because the conceptual model did not map very easily onto an efficient implementation, which developers at the time could use.
+However the actor-model did not, and indeed has not, gained much popularity, with Mackay\cite{mackay97} claiming that actors did not catch on because the conceptual model did not map very easily onto an efficient implementation, which developers at the time could use.
 
 \subsection{State of the Art}
 
 There are two popular languages involved in the active development of actors - Erlang and Scala (a JVM\footnote{Java Virtual Machine}-based language), as well as several others (such as SALSA, AmbientTalk, F\#, C++, D and Rust).
 Erlang is dynamically typed, runs on its own virtual machine with its own eco-system, whereas Scala runs on top of the JVM with the ecosystem and high level support that it provides.
 
-Scala and Erlang both have their own implementation of actors, the semantics of both being more or less the same, however there are some differences.
+Scala and Erlang both have their own implementation of actors, the semantics of both being more or less the same.
+However there are some key differences.
 For example in Erlang, multiple processes in the same VM\footnote{Virtual Machine} can easily share the same data because the language will guarantee this data is immutable.
 In Scala this is not possible, since you can easily send a mutable reference to another actor - which can lead to race conditions\cite{akka-mutable}.
 Scala is a type-safe language, with code being error-checked at compile time for many different problems (such as adding a Boolean to an Int), whereas Erlang has only limited type-safety.
 
 Actors can communicate locally (i.e. running on the same machine) or via a network, typically using a protocol over TCP/IP.
 
-Pony attempts to take the best parts to these two approaches, with some additional advantages.
+Pony attempts to take the best parts of these two approaches, with some additional features also included.
 
 \subsection{Process Calculi}
 
 Process calculi are formal models, to help with the design of concurrent systems.
 The first process calculus was CSP (Communicating Sequential Processes), developed by Hoare in 1978\cite{hoare1978}.
-Unlike later process calculi, CSP was designed as programming language, rather than as a mathematical model.
-It has some key differences to the actor-model, for example processes in CSP are anonymous, whereas in the actor-model processes have identities.
+Unlike later process calculi, CSP was designed as a programming language rather than as a mathematical model.
+It has some key differences to the actor-model, for example processes in CSP are anonymous whereas in the actor-model processes have identities.
 In CSP messages are sent synchronously and in the actor-model they are sent asynchronously.
 
-The $\pi$ calculus, a process calculi, was partly inspired by the actor model, but still had several important differences - communication is named in both, however in the $\pi$ calculus communication is done over channels, rather than the more direct method used by actors.
+The $\pi$ calculus, a process calculi, was partly inspired by the actor model, but still has several important differences.
+For example communication is named in both.
+However in the $\pi$ calculus communication is done over channels, rather than the more direct method used by actors.
 
 The join calculus is another process calculus, developed to help formally model the design of distributed programming languages\cite{fournet1996}.
 It tried to avoid some of the problems involved with the $\pi$ calculus\cite{milner1989}, which is based on atomic non-local interactions, making it difficult to implement in a real system.
 
-The calculus can be seen as an asynchronous version of the $\pi$ calculus, with several strong restrictions\cite{fournet1996}:
+The join calculus can be seen as an asynchronous version of the $\pi$ calculus, with several strong restrictions\cite{fournet1996}:
 \begin{enumerate}[noitemsep]
 	\item Scope restriction, reception, and replicated reception are syntactically merged into a single construct, called the definition.
 	\item Communication can only occur on defined names.
@@ -176,7 +182,7 @@ The main ideas behind COP are:
 \end{itemize}
 
 Actors fit perfectly into this paradigm, meeting all of the requirements.
-Sharing immutable data between processes is fine, since this can be modelled as each process having its own, separate copy of the data.
+Sharing immutable data between processes is fine since this can be modelled as each process having its own, separate copy of the data.
 
 \subsection{Use Cases for the Actor-Model}
 
@@ -197,13 +203,13 @@ An advantage of actors is that they allow you to think about concurrency on a mo
 
 In 1986, the Ericsson Computer Science Laboratory began the development of Erlang\cite{armstrong2007} (named after either Agner Krarup Erlang, a Danish mathematician, or ERicsson LANGuage, depending on who you ask).
 The Lab was tasked with "providing a better way of programming telephony applications".
-In the 1980s telephony requirements were atypical to those of other industries, needing to be very concurrent (handling thousands and thousands of calls at once), but these processes can be very lightweight and each one requiring very little work.
+In the 1980s telephony requirements were atypical to those of other industries, needing to be very concurrent (handling thousands and thousands of calls at once), but these processes could be very lightweight and each one required very little work.
 It was a requirement that the system be very tolerant of faults and allow on-the-fly upgrades without system downtime.
 It turns out all of these requirements map very easily and effectively onto the actor-model.
 
 Erlang is now used across industry for so-called "soft real-time" programming in many different areas, including (but not limited to) telecoms (at T-Mobile, Nortel and Motorola), Databases (CouchDB, riak and SimpleDB), Facebook Chat, Trading (Goldman Sachs and Smarkets) and servers for online games (Call of Duty and Battlestar Galactica).
 
-Erlang's syntax, which took inspiration from Prolog, (and in fact the original Erlang interpreter was written in Prolog), is very different from most other programming languages and may have been a reason for its relatively low popularity.
+Erlang's syntax, which took inspiration from Prolog, (and in fact the original Erlang interpreter was written in Prolog), is very different from most other programming languages, which may have been a reason for its relatively low popularity.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -247,7 +253,9 @@ It includes a myriad of orthogonal features, including anonymous functions, lazy
 Scala has significant library support for actors, with the Akka framework.
 Originally there were two competing actor implementations, scala.actors and akka.actors, with scala.actors being replaced with akka actors in version 2.10\cite{scala-actor-migration}.
 Both frameworks were designed to look like Erlang syntax using operator overloading.
-Akka includes a large amount of documentation, as well as commercial support for businesses looking to use Akka-style actors, it also includes several different kinds of actors (Actors (standard actor), Typed Actors (a more restrictive actor, with static context) and Remote Actors (which can run on remote machines)) and provides a complete system for using actors in production environments.
+Akka includes a large amount of documentation, as well as commercial support for businesses looking to use Akka-style actors.
+It also includes several different kinds of actors: Actors (standard actor), Typed Actors (a more restrictive actor, with static context) and Remote Actors (which can run on remote machines).
+The distribution provides a complete system for using actors in production environments.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -289,9 +297,9 @@ This style of code is more familiar to developers who have experience in languag
 \label{sec:ambienttalk}
 
 AmbientTalk is an experimental language, developed at Vrije Universiteit Brussel, designed to write distributed software across low quality wireless networks.
-Its design was strongly influenced by SmallTalk (block closures, keyworded messages), with its concurrency model based on the actor-model supporting futures and event-loops.
+Its design was strongly influenced by SmallTalk (block closures, keyworded messages), with its concurrency model based on the actor-model which supports futures and event-loops.
 Its primary function is to experiment with new language features and abstractions to help design software which needs to run on highly volatile networks.
-The system will automatically buffer messages which the receiver fails to receive which means the programmer can abstract out temporary network failures\cite{ambienttalk-failure}.
+The system will automatically buffer messages that the receiver fails to receive which means the programmer can abstract out temporary network failures\cite{ambienttalk-failure}.
 AmbientTalk runs on top of the JVM, meaning that Java libraries can be used easily.
 The model is designed such that JVM threads cannot interfere with the concurrency inherent in Ambient Talk\cite{ambienttalk-interfere}
 
@@ -425,7 +433,7 @@ digraph Immutability {
 \label{fig:ownership-hierachy}
 \end{figure}
 
-Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner\footnote{Eg 5:$B<2>$ is an object at address 5, of class C owned by the object at address 2}, edges are field references.
+Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner\footnote{Eg 5:$B<2>$ is an object at address 5, of class C owned by the object at address 2} and each edge is a field reference.
 
 We can represent ownership as sets:
 $\/2.owned=\{4,5\}$, $2.owned^{*}=\{4,5,7\}$ and $5.owned=\{6,7\}$\footnote{where $owned^{*}$ is everything in the tree below the object.}
@@ -434,7 +442,7 @@ By general intuition, if $x$ and $y$ are not aliases, and neither owns the other
 
 An object, $a'$, is said to be dominated by another object, $a,$ at a point in execution $iff$ all paths from the root object to $a'$ go through $a$.
 
-We can view ownership types as an alternative method of describing uniqueness, where the owner of a reference is the same a unique reference.
+We can view ownership types as an alternative method of describing uniqueness, where the owner of a reference is the same as having a unique reference.
 This confers similar advantages to unique references: easier parallelism, concurrency and reasoning.
 
 If $x.y$ and $x.z$ are not in each others ownership sets, then $x.y.method$ will maintain
@@ -448,10 +456,11 @@ There is also a complexity overhead of annotating code with the specific owner o
 
 The Partitioned Global Address Space model\cite{pgas} is another parallel programming model, which assumes that the global address space is partitioned, with a portion of it assigned to each thread.
 This approach has some additional advantages, since each processor can exploit locality of reference.
-An object can be in either local memory (and therefore local to a thread) or else in the global address space, in the address space related assigned to the thread in question.
+An object can be in either local memory (and therefore local to a thread) or else in the global address space (in the address space related assigned to the thread in question).
+
 X10 is a programming language developed at IBM, designed for very high powered computation, which uses the PGAS model.
 The language introduces higher-level concurrency constructs, such as atomic sections in place of locks, clocks instead of barriers and asynchronous operations in lieu of threads\cite{x10}.
-A computation in X10 is divided amongst a set of different places, where each places holds one or more activities that operates on the data stored in different storage classes.
+A computation in X10 is divided amongst a set of different places, where each place holds one or more activities that operate on the data stored in different storage classes.
 The different classes of storage are: activity-local, place-local (can be accessed by all activities executing in the same place), partitioned-global (in the global address space, accessible by activities in all places) and as values (stateless, immutable data)\cite{x10-places}.
 
 \subsection{Cyclone}
@@ -466,11 +475,14 @@ Static analysis checks that a thread only access data $iff$ it holds the appropr
 \newpage
 \section{Language Features}
 
+There is a lot of current research in the areas of language design, as well as new features to add to existing programming languages, which we have looked into and have presented our findings.
+
 \subsection{Current Solutions to Object Cloning}
 
-In Java, object cloning is achieved by implementing the $Cloneable$ interface \cite{java-cloneable}, which gives the class a $clone()$ method, which if no direct implementation is given, will do a "shallow copy" by copying all of the fields in the original object to the new object.
+In Java, object cloning is achieved by implementing the $Cloneable$ interface\cite{java-cloneable}. This gives the class a $clone()$ method, which if no direct implementation is given, will do a "shallow copy" by copying all of the fields in the original object to the new object.
 If this method is overridden, the class provide its own mechanisms after calling $super.clone()$ such as duplicating some fields, or creating a new unique-identifier.
-In C++, classes can define a copy constructor or the compiler will automatically generate one\cite{ansi:03:c++}, which specifies which fields to copy and in the case of the compiler generated version which will do a shallow copy of all of the fields.
+
+In C++, classes can define a copy constructor or else the compiler will automatically generate one\cite{ansi:03:c++}. This specifies which fields to copy, and in the case of the compiler generated version, will do a shallow copy of all of the fields.
 
 \subsection{Current Solutions to Serialisation}
 
@@ -479,11 +491,25 @@ C and C++ do not have such easily utilisable methods in their standard libraries
 
 In the .net framework, a class can become serialisable by adding the $Serializable$\cite{net-serializable} attribute to the class, if (in the future) new members are added to the class, they can be tagged with the $OptionalField$ attribute\cite{net-optional}, allowing older versions of the object in question to be deserialized without problem.
 
-\newpage
+\subsection{Type Inference}
+
+Type inference\cite{damas-milner} combines the safety of static types\cite{palsberg199419} (by doing all of the type checks associated with static typing), with the convenience of dynamic typing\cite{Abadi:1991:DTS:103135.103138}(by reducing the amount of typing required).
+There are two "types" of type inference, global and local.
+
+Global type inference was first introduced with Hindley-Milner\cite{hindley-milner}, and can infer the types of functions in polynomial (or linear) time.
+The huge advantage of global inference is that it checks the program as a whole and can infer cross-function correctness.
+However, Hindley-Milner style inference precludes the introduction of subtypes\cite{Mitchell:1984:CTI:800017.800529} (and therefore prevents us from adding several useful programming tools, such as interfaces or traits, to the language).
+Languages with support for global type inference include Haskell and ML (including languages such as F\# and OCaml).
+
+Local type inference, introduced by Pierce and Turner\cite{pierce1997local}, can infer missing types only from the types of adjacent syntax nodes\cite{hosoya1999good}, the purpose of which is to "eliminate especially those type annotations that are both common and silly"\cite{pierce2000local}.
+It is much easier to implement a local type inference scheme, as the number of constraints that need to be examined are limited to a very few nearby nodes.
+We should also consider that local type inference forces us to include top-level types (such as input and output parameters) when writing code, which serves as a useful form of documentation\cite{pierce2000local}.
+Languages with support for local type inference include C++11, Scala, C\# and Java.
+
 \newpage
 \section{Architecture}
 
-When designing the compiler, it will be necessary to decide what processor architecture to compile to, taking into account complexity, performance, debugging and tool availability.
+When designing the compiler, it will be necessary to decide what processor architecture to compile to, taking into account complexity, performance, debugging and the tools available.
 
 \subsection{x86}
 
@@ -495,11 +521,12 @@ x86, however, is difficult to write a faster compiler for because of the large n
 
 The ARM ISA\footnote{Instruction Set Architecture} is the most popular architecture in terms of sheer numbers in use today, with 6.1 billion ARM chips being shipped in 2010\cite{theregister2011}.
 The architecture is RISC\footnote{Reduced instruction set computing}, meaning writing a compiler targeting the architecture is much simpler, as there are fewer instructions and the complexity of the code generator is reduced.
-However most of the 6 billion chips are low-powered and in devices such as set-top boxes, which are not suited for high-performance computing. It could be beneficial to target ARM if we were going to implement actors in a similar fashion to in AmbientTalk (see section \ref{sec:ambienttalk}), for handling distributed actors over poor connections.
+However most of the 6 billion chips are low-powered and in devices such as set-top boxes, which are not suited for high-performance computing. It could be beneficial to target ARM if we were going to implement actors in a similar fashion to AmbientTalk (see section \ref{sec:ambienttalk}), for handling distributed actors over poor connections.
 
 \subsection{JVM or CLR}
 
-Targeting the JVM or CLR\footnote{Common Language Runtime - aka the .net framework} would be very useful, as it would be mean we would not need to worry about manually managing memory or simple optimisations and the VM would be able to optimise them out at run time, for only a small performance hit.
+Targeting the JVM or CLR\footnote{Common Language Runtime - aka the .net framework} would be very useful, as it would be mean we would not need to worry about manually managing memory or simple optimisations. 
+The VM would be able to optimise them out at run time, for only a small performance hit.
 Unfortunately this is not a route we wish to take on this project, as we do not want the overhead of running on top of a VM, since it means the actor garbage collector already developed would not work.
 
 \subsection{C}
@@ -511,7 +538,7 @@ Translating Pony code into C, before compiling with GCC/Clang would be very bene
 \item Cross-platform - as long as the C compiler could target the architecture in question, we would be able to compile Pony to that platform.
 \end{itemize}
 
-However, the debugging support listed as an advantage is unlikely to be very helpful, since this is likely to confuse developers if the "Pony" compiler suddenly starts complaining about error messages in the C code produced.
+However, the debugging support listed as an advantage may not to be very helpful, since this is likely to confuse developers if the "Pony" compiler suddenly starts complaining about error messages in the C code produced.
 
 \subsection{LLVM}
 
@@ -521,7 +548,7 @@ LLVM has many advantages over other, more traditional compilation options:
 \begin{itemize}[noitemsep]
 \item Performance - LLVM can perform many standard optimisations, as well as lower level register allocation optimisations
 \item Cross-platform, LLVM can target almost every major ISA in use today\cite{llvm-svn}, with no front-end changes required (as well as compiling "up" to higher-level languages such as Javascript.)
-\item Debugging support - LLVM intrinsics allow use to use tools such as GDB/LLDB to step through a currently running program, with source code representations of the software shown.
+\item Debugging support - LLVM intrinsics allow the use of tools such as GDB/LLDB\footnote{GNU Debugger/LLVM Debugger} to step through a currently running program, with source code representations of the software shown.
 \item Ease of use - LLVM has extensive documentation and removes much of the work needed to write a compiler, reducing it to lexing, parsing, type-checking and minimal code generation.
 \end{itemize}
 
@@ -634,7 +661,7 @@ A reference can possess one of four qualifiers\cite{microsoft2012}
 		There is an additional restriction on read-only values, in that traversing the heap through a read-only reference will only ever produce non-mutable references
 	\item Immutable - a read-only object with a further restriction in that no other references to that object are able to mutate it.
 	\item Unique - an external reference to a cluster of externally unique references, such that there is only one "entrance" reference to the object graph.
-		There is an exception to this, in that if the object graph contains immutable reference, we can safely have multiple references.
+		There is an exception to this, in that if the object graph contains immutable references, the immutable references can be safely referred to.
 \end{itemize}
 
 Each qualifier carries with it a unique set of capabilities (what you can do with the reference in question).
@@ -714,6 +741,7 @@ This ability is very useful, since it means we can easily parallelise destructiv
 
 \newpage
 \chapter{Project Plan}
+\label{chapter:project}
 
 \section{Investigation}
 The first step of the project will be an investigation into the design of programming languages, and I will look at which features could be useful, targeting specific areas where Pony will be used.
@@ -725,10 +753,10 @@ The next step will be to design the Pony language and decide on an initial, conc
 The specification should comprise a grammar in EBNF, along with a description of the semantics of the language.
 
 \section{Implementation}
-The implementation side of the project will be consist of several parts once a specification is formalised.
+The implementation side of the project will consist of several parts once a specification has been formalised.
 
 \begin{enumerate}
-	\item Initial test code in Pony that should be possible compiled.
+	\item Initial test code in Pony that should be possible to compile.
 	\item A Pony compiler for a small subset of the language written in a native language (such as C++) with error handling for features included
 		\begin{itemize}
 			\item Lexing and Parsing of the full language, which means we can use all of the C++ debugging tools available to us to debug the parser, which will need to be hand-rolled (as there will be no parser generator for Pony).
@@ -762,7 +790,7 @@ Problems that might arise directly related to the modal-type system
 		\item How to interoperate with other LLVM code. For example if a developer was using the OpenGL LLVM API, should we consider all return values to be mutable?
 			Or should we require users to provide wrappers to the external code, annotating as appropriate.
 		\item Allowing casting. Should we allow an implicit conversion from unique $\to$ mutable/immutable.
-			Will there any problems related to this?
+			Will there be any problems related to this?
 		\item Generic mode types - what is the most useful and readable manner of representing generic modes and how should they be treated in the type system.
 	\end{itemize}
 	
@@ -787,12 +815,14 @@ If we find we are running out of time, there are several different paths we coul
 \item We have written the first stages of the C++ compiler, with a lexer and parser and a useful level of error-reporting.
 	The parser is implemented as a recursive descent parser, with the grammar easily viewable in the parser code.
 \item We have written a semantic analyser, checking the types and building a symbol table of a pony file.
-	There is no implementation of modal references, but the parser 
+	There is no implementation of modal references and the type checker currently warns that they are not implemented (since the parser can handle them as part of the grammar).
 \item We have done work towards a standard library, including operations on primitive types, which includes arrays.
+	In the standard library there is also a partial hashmap implementation, as well as a standard linked list.
 \end{itemize}
 
 \newpage
 \chapter{Evaluation Plan}
+\label{chapter:evaluation}
 
 \section{Best case scenario}
 
@@ -802,10 +832,10 @@ The Pony compiler should be able to compile itself with no errors.
 
 \section{Expectations}
 
-I do not expect to achieve all these goals, since that would be too ambitious for the timescale of this project.
+I do not expect to achieve all these goals, since that would be too ambitious for the timescale available for this project.
 Instead I will focus on:
 \begin{itemize}
-\item Correctly implementing the modal side of the type system, as	this is currently an area of active research, with Microsoft having written several million lines of code in a C\# variant, which is referred to in a paper released in November\cite{microsoft2012}.
+\item Correctly implementing the modal side of the type system, as	this is currently an area of active research, with Microsoft having written several million lines of code in a C\# variant\cite{microsoft2012}.
 \item An implementation of Partial Objects, in order to demonstrate their usefulness.
 	For example implementing stringability via partial objects would be a (relatively) straightforward effort, subject to time available.
 \item The bootstrapping process, which should be easily extendable for incremental improvements to the compiler.
@@ -849,7 +879,7 @@ At this point the compiler should introduce a warning/error to the developer.
 
 \item Compiler should be able to bootstrap itself (i.e. the Pony compiler should be able to compile the compiler once it is written in Pony).
 
-\item Some form of standard library, including primitive types (int, bool, char, string, array, vector) and file IO, the parts necessary for writing a compiler essentially.
+\item Some form of standard library, including primitive types (int, bool, char, string, array, vector) and file I/O, the essential parts necessary for writing a compiler.
 	This means that the compiler can be fully self-hosting, with the only dependency being LLVM.
 \end{itemize}
 
