@@ -75,13 +75,12 @@ There are many problems relating to concurrent programming, with errors being di
 Problems range from deadlock, where two processes are stuck waiting for each other to finish, to data races, where two processes attempt to read and modify the same data at the same time, causing unpredictable results.
 There are other, more human, problems involved in concurrency, as the thought processes required for developers to reason about concurrent programs are different from those for sequential programming.
 
-There are many different solutions to these problems, across a wide range of research areas.
-Some approaches, such as locking and semaphores\cite{dijkstra-semaphore} leave the protection of data entirely up to the developer, whose responsibility it is to explicitly manage the concurrency.
+There are many different solutions to these problems across a wide range of research areas.
+Some approaches, such as locking and semaphores\cite{dijkstra-semaphore}, leave the protection of data entirely up to the developer, whose responsibility it is to explicitly manage the concurrency.
 Other approaches attempt to leverage existing research into other areas such as utilising types or other forms of static analysis.
 
 However, many of these approaches are either very complicated, prone to errors or suffer from poor performance.
 We feel that there is an opportunity for a new language to be created, which will to be high performance and is safe and simple for developers to use.
-\\
 \\
 \begin{itemize}
 \item Chapter \ref{chapter:background} describes the relevant previous work in the field of language design for concurrency.
@@ -89,7 +88,8 @@ We feel that there is an opportunity for a new language to be created, which wil
 \item Chapter \ref{chapter:pony} describes the approaches we have already decided to take in the project and what research has been completed so far.
 \item Chapter \ref{chapter:project} details the current plan for the project, along with milestones, potential fallback positions and possible extensions to the project.
 	It also states what work we have already completed on the project, along with the challenges we expect to encounter.
-\item Chapter \ref{chapter:evaluation} explains how we plan on evaluating the project, we discuss both human and technical evaluations with best case scenarios as well as more realistic expectations.
+\item Chapter \ref{chapter:evaluation} explains how we plan on evaluating the project. 
+	We discuss both human and technical evaluations with best case scenarios as well as more realistic expectations.
 \end{itemize}
 
 \newpage
@@ -126,13 +126,13 @@ Erlang is dynamically typed, runs on its own virtual machine with its own eco-sy
 
 Scala and Erlang both have their own implementation of actors, the semantics of both being more or less the same.
 However there are some key differences.
-For example in Erlang, multiple processes in the same VM\footnote{Virtual Machine} share nothing, data is shared by sending a deep copy of the data (or via .
+For example in Erlang, multiple processes in the same VM\footnote{Virtual Machine} share nothing, data is shared by sending a deep copy of the data (or via a distributed database such as MNESIA\cite{mnesia}).
 In Scala this is not possible, since you can easily send a mutable reference to another actor - which can lead to race conditions\cite{akka-mutable}.
 Scala is a type-safe language, with code being error-checked at compile time for many different problems (such as adding a Boolean to an Int), whereas Erlang has only limited type-safety.
 
 Actors can communicate locally (i.e. running on the same machine) or via a network, typically using a protocol over TCP/IP.
 
-\hl{Pony attempts to take the best parts of these two approaches, with some additional features, such as the prevention of data races without the need for deep copying.}
+Pony attempts to take the best parts of these two approaches, with some additional features, such as the prevention of data races without the need for deep copying.
 
 \subsection{Process Calculi}
 
@@ -149,7 +149,7 @@ The join calculus is another process calculus, developed to help formally model 
 The join calculus is based on the CHemical Abstract Machine (or CHAM), which can be regarded as the computational model of the $\pi$ calculus.
 It tried to avoid some of the problems involved with the $\pi$ calculus\cite{milner1989}, which is based on atomic non-local interactions, making it difficult to implement in a real system.
 
-The reflexive CHemical Abstract Machine (or CHAM)\cite{fournet1996} can be seen as an asynchronous version of the $\pi$ calculus, with several strong restrictions:
+The reflexive CHemical Abstract Machine can be seen as an asynchronous version of the $\pi$ calculus\cite{fournet1996}, with several strong restrictions:
 \begin{enumerate}[noitemsep]
 	\item Scope restriction, reception, and replicated reception are syntactically merged into a single construct, called the definition.
 	\item Communication can only occur on defined names.
@@ -368,6 +368,25 @@ SALSA solves this by grouping the messages into a single message before sending 
 This allows a programmer to specify partial orderings in the messages, which is very useful for tasks relating to I/O.
 
 \newpage
+\section{Mutual Exclusion}
+
+Mutual exclusion was one of the first solutions to the problem of safe concurrency, preventing two or more threads from accessing shared resources at once.
+The first solution to mutual exclusion were semaphores\cite{dijkstra-semaphore}.
+Semaphores are separated into two different kinds - counting semaphores (with an arbitrary resource count) and binary semaphores (which are restricted to either 0 or 1).
+Semaphores have two functions:
+\begin{itemize}
+	\item wait - which decrements the semaphores counter, and if the count is currently 0, sleep until the resource is free.
+	\item signal - which increments the counter, signalling any waiting threads
+\end{itemize}
+
+This system guarantees that no two threads will access the same data at the same time.
+However two threads can enter deadlock, where each thread is waiting for the other to release their lock, which prevents the system from progressing any further.
+
+Semaphores were expanded by Hoare\cite{Hoare:1974:MOS:355620.361161} and Hansen\cite{hansen1975programming} into monitors, which are more object-orientated-style semaphores.
+Monitors are a higher-level concept, where each method of the monitor is executed with mutual exclusion, meaning developers can more easily reason about the locking strategies.
+Unfortunately monitors can still enter deadlock, when two threads each hold a monitor the other wants\cite{cooper1988preserving}.
+
+\newpage
 \section{Type-based Solutions to Safe Concurrency}
 
 \subsection{Ownership Types}
@@ -422,7 +441,7 @@ digraph Immutability {
 \label{fig:ownership-hierachy}
 \end{figure}
 
-Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner (e.g. 5:$B<2>$ is an object at address 5, of class C owned by the object at address 2) and each edge is a field reference.
+Figure \ref{fig:ownership-hierachy} shows an ownership hierarchy, where each node is an object, their contents describing their address, class and owner (e.g. 5:$B<2>$ is an object at address 5, of class B owned by the object at address 2) and each edge is a field reference.
 
 We can represent ownership as sets:
 $\/2.owned=\{4,5\}$, $2.owned^{*}=\{4,5,7\}$ and $5.owned=\{6,7\}$\footnote{where $owned^{*}$ is everything in the tree below the object}.
@@ -477,7 +496,8 @@ In C++, classes can define a copy constructor or else the compiler will automati
 In Java, serialisation is achieved automatically by implementing the $java.io.Serializable$ \cite{java-serializable} interface, which allows the saving or sending of an object and the fields it references.
 C and C++ do not have such easily utilisable methods in their standard libraries.
 
-In the .net framework, a class can become serialisable by adding the $Serializable$\cite{net-serializable} attribute to the class, if (in the future) new members are added to the class, they can be tagged with the $OptionalField$ attribute\cite{net-optional}, allowing older versions of the object in question to be deserialized without problem.
+In the .net framework, a class can become serialisable by adding the $Serializable$\cite{net-serializable} attribute to the class.
+If (in the future) new members are added to the class, they can be tagged with the $OptionalField$ attribute\cite{net-optional}, allowing older versions of the object in question to be deserialized without problem.
 
 \subsection{Type Inference}
 
@@ -487,12 +507,12 @@ There are two "types" of type inference, global and local.
 Global type inference was first introduced with Hindley-Milner\cite{hindley-milner}, and can infer the types of functions in polynomial (or linear) time.
 The huge advantage of global inference is that it checks the program as a whole and can infer cross-function correctness.
 However, Hindley-Milner style inference precludes the introduction of subtypes\cite{Mitchell:1984:CTI:800017.800529} (and therefore prevents us from adding several useful programming tools, such as interfaces or traits, to the language).
-Languages with support for global type inference include Haskell and ML (including languages such as F\# and OCaml).
+Languages with support for global type inference include Haskell\cite{haskell-inference} and ML (including languages such as F\#\cite{fsharp-inference} and OCaml\cite{ocaml-inference}).
 
 Local type inference, introduced by Pierce and Turner\cite{pierce1997local}, can infer missing types only from the types of adjacent syntax nodes\cite{hosoya1999good}, the purpose of which is to "eliminate especially those type annotations that are both common and silly"\cite{pierce2000local}.
 It is much easier to implement a local type inference scheme, as the number of constraints that need to be examined are limited to a very few nearby nodes.
 We should also consider that local type inference forces us to include top-level types (such as input and output parameters) when writing code, which serves as a useful form of documentation\cite{pierce2000local}.
-Languages with support for local type inference include C++11, Scala, C\# and Java.
+Languages with support for local type inference include C++11\cite{c++11}, Scala\cite{scala-inference}, C\#\cite{csharp-inference} and Java\cite{java-inference}.
 
 \newpage
 \section{Architecture}
@@ -647,7 +667,7 @@ In the code above we can see some more of the syntax and ideas of Pony, as well 
 \label{sec:immutability}
 
 Modal references - mutability enforced by the type system\cite{tschantz2005javari}\cite{zibin2007object}\cite{zibin2010ownership} - can be used to enforce safe concurrency.
-If the language prevents the user from sharing mutable data, the language prevents race conditions.
+If the language prevents the user from sharing mutable data, then the language prevents race conditions.
 A reference can possess one of four qualifiers\cite{microsoft2012}
 
 \begin{itemize}
@@ -692,13 +712,13 @@ However downcasting is not permitted, as this violates capability constraints (d
 
 Pony will provide a simple syntax for describing these modes and will infer the mode of references whenever possible.
 For now the syntax for modes is as follows: readonly - no notation (being the default),  mutable - \textasciitilde (think $\rightsquigarrow$ for heap mutation), immutable - ! and unique - @.
-This is in construct to the Microsoft paper\cite{microsoft2012}, which required  long and ugly code annotations.
+This is in contrast to the Microsoft paper\cite{microsoft2012}, which required long and ugly code annotations.
 A user can be more verbose and state the mode for clarity, as well as to specify that the mode of a method parameter is the same as another parameter.
 For example the add method of a collection of immutable objects needs to verify that the object being added is also immutable (but the method itself doesn't need to know about the mode).
 
 Conversions to and from unique should be possible, since uniqueness does not fit into the hierarchy in the purest sense.
 Since unique references are only accessible from a single thread, they can become mutable.
-They can also be converted to immutable, since a single thread holds a reference the decision to treat the object cluster as immutable is localised.
+They can also be converted to immutable, since a single thread holds a reference, the decision to treat the object cluster as immutable is localised.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -749,13 +769,13 @@ Traits can be considered to be an interface with already-implemented methods.
 \label{chapter:project}
 
 \section{Investigation}
-The first step of the project will be an investigation into the design of programming languages, and I will look at which features could be useful, targeting specific areas where Pony will be used.
-It will also look at the style of code that programmers want to write in the language.
+The first step of the project will be an investigation into the design of programming languages, and we will look at which features could be useful, targeting specific areas where Pony will be used.
+We will also look at the style of code that programmers want to write in the language.
 An investigation into LLVM and the Intermediate Representation it uses will also be necessary.
 
 \section{Design}
 The next step will be to design the full Pony language and decide on an initial, concrete syntax for the language (the operational semantics for the language having already been formalised).
-The specification should comprise a grammar in EBNF, along with a description of the semantics of the language.
+The specification will comprise a grammar in EBNF, along with a description of the semantics of the language.
 At this point the specification should be considered flexible and open to considerable change.
 
 \section{Implementation}
@@ -763,9 +783,10 @@ The implementation side of the project will consist of several parts once a spec
 
 \begin{enumerate}
 	\item Initial test code in Pony that should be possible to compile.
-	\item A Pony compiler for a small subset of the language (Pony-) written in a native language (such as C++) with error handling for features included
-		Lexing and Parsing of the full language, which means we can use all of the C++ debugging tools available to us to debug the parser, which will need to be hand-rolled (as there will be no parser generator for Pony).
-		This also means we can easily port the C++ code to Pony and requires no maintenance once implemented.
+	\item A Pony compiler for a small subset of the language (Pony-) written in a native language (such as C++) with error handling for the features included.
+		We will do lexing and parsing of the full language.
+		This means we can use all of the C++ debugging tools available to us to debug the parser, which will need to be hand-rolled (as there will be no parser generator for Pony).
+		This also means we can easily port the C++ code to Pony and it will require no maintenance once implemented.
 		The features we will include in Pony- are:
 		\begin{itemize}[noitemsep]
 			\item Object oriented features, such as classes, traits and objects.
@@ -795,23 +816,23 @@ There will also only be a limited support network of two or three people at Impe
 Problems that might arise directly related to the modal-type system
 	\begin{itemize}
 		\item How to interoperate with other LLVM code. For example if a developer was using the OpenGL LLVM API, should we consider all return values to be mutable?
-			Or should we require users to provide wrappers to the external code, annotating as appropriate.
-		\item Allowing casting. Should we allow an implicit conversion from unique $\to$ mutable/immutable.
+			Or should we require users to provide wrappers to the external code, annotating as appropriate?
+		\item Allowing casting. Should we allow an implicit conversion from unique $\to$ mutable/immutable?
 			Will there be any problems related to this?
-		\item Generic mode types - what is the most useful and readable manner of representing generic modes and how should they be treated in the type system.
+		\item Generic mode types - what is the most useful and readable manner of representing generic modes and how should they be treated in the type system?
 	\end{itemize}
 	
 \section{Fallback Positions}
 If we find we are running out of time, there are several different paths we could take that would simplify the project, whilst still retaining the original goals.
 \begin{itemize}[noitemsep]
-\item No bootstrapping.
-	If we abandon the idea of writing the compiler in Pony, we will be able to save a lot of repetition of work, as well as having a lot of reference material related to C++ available to us.
-	The downside to this is that the amount of Pony code we would write would be much lower and thus bugs in the compiler might not be discovered.
-\item Removal of features.
-	We could remove some of the features from the language, such as partial objects, which would reduce the amount of work needed for the project.
-	The obvious downside to this is that removing features makes the language less desirable and less useable.
-\item Use external standard library.
-	 Since we have chosen to use LLVM, we can link with external libraries, removing the need for efficient, well tested library code written in Pony.
+	\item No bootstrapping.
+		If we abandon the idea of writing the compiler in Pony, we will be able to save a lot of repetition of work, as well as having a lot of reference material related to C++ available to us.
+		The downside to this is that the amount of Pony code we would write would be much lower and thus bugs in the compiler might not be discovered.
+	\item Removal of features.
+		We could remove some of the features from the language, such as partial objects, which would reduce the amount of work needed for the project.
+		The obvious downside to this is that removing features makes the language less desirable and less useable.
+	\item Use external standard library.
+		 Since we have chosen to use LLVM, we can link with external libraries, removing the need for efficient, well tested library code written in Pony.
 \end{itemize}
 
 \section{Current Progress}
@@ -832,16 +853,16 @@ If we find we are running out of time, there are several different paths we coul
 The dates below are approximations of when we hope to achieve each step.
 
 \begin{enumerate}[noitemsep]
-	\item Finish initial research and investigation - 3rd December
-	\item Initial grammar and semantics - 14th December
-	\item C++ Lexer and Parser - 2nd January
-	\item Pony- type checking - 18th January
-	\item Pony- code generation - 8th February
-	\item Initial Pony compiler - 22nd February
-	\item Modal References - 8th March
-	\item Modal Inference - 22nd March
-	\item Partial Objects - 31st May
-	\item Further Improvements - 14th June
+	\item Finish initial research and investigation - 3rd December 2012
+	\item Initial grammar and semantics - 14th December 2012
+	\item C++ Lexer and Parser - 2nd January 2013
+	\item Pony- type checking - 18th January 2013
+	\item Pony- code generation - 8th February 2013
+	\item Initial Pony compiler - 22nd February 2013
+	\item Modal References - 8th March 2013
+	\item Modal Inference - 22nd March 2013
+	\item Partial Objects - 31st May 2013
+	\item Further Improvements - 14th June 2013
 \end{enumerate}
 
 
@@ -908,7 +929,7 @@ object main {
 This code should fail to compile, since $buf$ cannot be mutable (as you can only send immutable or unique messages) and cannot be unique, immutable or read-only (as $main$ empties the buffer after it is sent).
 At this point the compiler should introduce a warning/error to the developer.
 
-\item Compiler should be able to bootstrap itself (i.e. the Pony compiler should be able to compile the compiler once it is written in Pony).
+\item The compiler should be able to bootstrap itself (i.e. the Pony compiler should be able to compile the compiler once it is written in Pony).
 
 \item Some form of standard library, including primitive types (int, bool, char, string, array, vector) and file I/O, the essential parts necessary for writing a compiler.
 	This means that the compiler can be fully self-hosting, with the only dependency being LLVM.
@@ -932,6 +953,225 @@ These results should be compared to alternative implementations in many differen
 \appendix
 \chapter{Test Cases}
 \label{app:test}
+
+\section{Failure Cases}
+\subsection{Parsing Failures}
+\begin{figure}[H]
+\begin{verbatim}
+trait lower {
+
+}
+\end{verbatim}
+\caption{Lower Case Type}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+hello
+\end{verbatim}
+\caption{Single Word}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+hello, world!
+\end{verbatim}
+\caption{Prose}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+object Terminate {
+
+  function term(x:Int) {
+    y = "
+  }
+
+}
+\end{verbatim}
+\caption{Unterminated String}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+object Upper {
+
+  function Up(X:Int) {
+
+  }
+
+}
+\end{verbatim}
+\caption{Upper Case Identifier}
+\end{figure}
+
+\subsection{Type Checker Failures}
+\begin{figure}[H]
+\begin{verbatim}
+object X {}
+
+object Y {
+
+  function main() {
+    y:X = new X;
+    y.method();
+  }
+}
+\end{verbatim}
+\caption{Missing Method}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+object Y {
+  function main() {
+    y:X = new X;
+  }
+}
+\end{verbatim}
+\caption{Missing Type}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+object Broken is Terrible {
+
+}
+\end{verbatim}
+\caption{Missing Trait}
+\end{figure}
+
+\section{Acceptance Cases}
+\subsection{Parsing Acceptance}
+\begin{figure}[H]
+\begin{verbatim}
+trait X {
+
+}
+
+object Y is X {
+
+}
+\end{verbatim}
+\caption{Simple Trait Use}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+object Maths {
+
+  function(x:Int,y:Int)->(z:Int) {
+    z = x + y;
+  }
+}
+\end{verbatim}
+\caption{Simple Arithmetic}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+object Upper {
+
+  function up(x:Int) {
+
+  }
+
+}
+\end{verbatim}
+\caption{Simple Method}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+
+object Terminate {
+
+  function term(x:Int) {
+    y:String = "test";
+  }
+}
+\end{verbatim}
+\caption{String Handling}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+trait Lower {
+
+}
+\end{verbatim}
+\caption{Trait}
+\end{figure}
+
+\subsection{Type checker acceptance}
+
+\begin{figure}[H]
+\begin{verbatim}
+trait X {
+
+}
+
+trait Y {
+
+}
+
+trait Z is X {
+
+}
+
+actor A is Z with Y {
+
+}
+\end{verbatim}
+\caption{Complex Mixins}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+object X {
+  function method() {
+    //does nothing
+  }
+}
+
+object Y {
+
+  function main() {
+    y:X = new X;
+    y.method();
+  }
+}
+\end{verbatim}
+\caption{Simple Method Call}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+object X {
+
+}
+
+object Y {
+  function main() {
+    y:X = new X;
+  }
+}
+\end{verbatim}
+\caption{Simple Constructor Use}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+trait X {
+
+}
+
+object Y is X {
+
+}
+\end{verbatim}
+\caption{Simple Trait}
+\end{figure}
 
 
 \end{document}
