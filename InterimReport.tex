@@ -445,25 +445,26 @@ The Partitioned Global Address Space model\cite{pgas} is another parallel progra
 This approach has some additional advantages, since each processor can exploit locality of reference.
 An object can be in either local memory (and therefore local to a thread) or else in the global address space (in the address space related assigned to the thread in question).
 
-X10\cite{x10} is a programming language developed at IBM, designed for very high powered computation, which uses the PGAS model.
+X10\cite{x10} is a programming language developed at IBM, designed for very high powered computation across clustered environments, which uses the PGAS model.
 The language introduces higher-level concurrency constructs, such as atomic sections in place of locks, clocks instead of barriers and asynchronous operations in lieu of threads.
 A computation in X10 is divided amongst a set of different places, where each place holds one or more activities that operate on the data stored in different storage classes.
 The different classes of storage are: activity-local, place-local (can be accessed by all activities executing in the same place), partitioned-global (in the global address space, accessible by activities in all places) and as values (stateless, immutable data)\cite{x10-places}.
+Places are used for managing concurrency by only permitting mutable data to be accessed from an activity in the same place as the data\cite{charles2005x10}.
 
 \subsection{Cyclone}
 \label{sec:cyclone}
 
-Cyclone was designed to be a safer-version of C, attempting to avoid some of the more common vulnerabilities in C programs such as buffer overflows.
+Cyclone\cite{grossman2005cyclone} was designed to be a safer-version of C, attempting to avoid some of the more common vulnerabilities in C programs such as buffer overflows.
 This is achieved by changing some of the semantics of C (limited pointer arithmetic, only safe casts permitted and forcing pointer-returning functions to return) and by extending the language (garbage collection, polymorphism, exceptions and never-$NULL$ pointers).
-Concurrency in Cyclone is handled with a second-order type system, focussed around locks and mutual exclusion.
+Concurrency in Cyclone is handled with a secondary type system, focussed around locks and mutual exclusion.
 Cyclone's type-system assigns each data object a lock, which a thread must hold access to when the object is accessed or mutated.
-Static analysis checks that a thread only access data $iff$ it holds the appropriate lock.
+Static analysis checks that a thread only access data if it holds the appropriate lock.
 
 \newpage
 \section{Language Features}
 
-There is a lot of current research in the areas of language design, as well as new features to add to existing programming languages, which we have looked into and have presented our findings.
-
+In the actor-model, serialisation is necessary in order to send objects - with object cloning being a simpler problem to initially solve.
+ 
 \subsection{Current Solutions to Object Cloning}
 
 In Java, object cloning is achieved by implementing the $Cloneable$ interface\cite{java-cloneable}. This gives the class a $clone()$ method, which if no direct implementation is given, will do a "shallow copy" by copying all of the fields in the original object to the new object.
@@ -473,7 +474,7 @@ In C++, classes can define a copy constructor or else the compiler will automati
 
 \subsection{Current Solutions to Serialisation}
 
-In Java, serialisation is achieved automatically by implementing the $java.io.Serializable$ \cite{java-serializable} interface, which allows the saving or sending of an object and its contents.
+In Java, serialisation is achieved automatically by implementing the $java.io.Serializable$ \cite{java-serializable} interface, which allows the saving or sending of an object and the fields it references.
 C and C++ do not have such easily utilisable methods in their standard libraries.
 
 In the .net framework, a class can become serialisable by adding the $Serializable$\cite{net-serializable} attribute to the class, if (in the future) new members are added to the class, they can be tagged with the $OptionalField$ attribute\cite{net-optional}, allowing older versions of the object in question to be deserialized without problem.
@@ -500,29 +501,32 @@ When designing the compiler, it will be necessary to decide what processor archi
 
 \subsection{x86}
 
-x86, and its 64-bit counter-part x86\textunderscore64, is the primary instruction set used on desktop machines. It has a wider array of development tools, documentation and support available.
+x86, and its 64-bit counter-part x86\textunderscore64\cite{intel-x86}, is the primary instruction set used on desktop machines.
+It has a wider array of development tools, documentation and support.
 Almost all the x86\textunderscore64 processors available on the market are multi-core, meaning that an actor-model language would see performance benefits from concurrent execution, allowing us to more easily demonstrate the performance benefits of the language.
-x86, however, is difficult to write a faster compiler for because of the large number of instructions and complexity of the architecture (since it is a CISC architecture).
+x86, however, is difficult to write a faster compiler for, because of the large number of instructions and complexity of the architecture (since it is a CISC architecture).
 
 \subsection{ARM}
 
 The ARM ISA\footnote{Instruction Set Architecture} is the most popular architecture in terms of sheer numbers in use today, with 6.1 billion ARM chips being shipped in 2010\cite{theregister2011}.
-The architecture is RISC\footnote{Reduced instruction set computing}, meaning writing a compiler targeting the architecture is much simpler, as there are fewer instructions and the complexity of the code generator is reduced.
-However most of the 6 billion chips are low-powered and in devices such as set-top boxes, which are not suited for high-performance computing. It could be beneficial to target ARM if we were going to implement actors in a similar fashion to AmbientTalk (see section \ref{sec:ambienttalk}), for handling distributed actors over poor connections.
+The architecture is RISC\footnote{Reduced instruction set computing}, i.e. a reduced instruction set.
+This means that writing a compiler targeting the architecture is much simpler, as there are fewer instructions and the complexity of the code generator is reduced.
+However, almost all of the 6 billion chips are low-powered and can be found in devices such as set-top boxes (and the rest are in slightly higher powered devices such as tablets and mobile phones), which are not suited for high-performance computing.
+It could be beneficial to target ARM if we were going to implement actors in a similar fashion to AmbientTalk (see section \ref{sec:ambienttalk}), for handling distributed actors over poor connections.
 
 \subsection{JVM or CLR}
 
-Targeting the JVM or CLR\footnote{Common Language Runtime - aka the .net framework} would be very useful, as it would be mean we would not need to worry about manually managing memory or simple optimisations. 
+Targeting the JVM or CLR\footnote{Common Language Runtime - aka the .net framework} would be very convenient, as it would be mean we would not need to worry about manually managing memory or simple optimisations. 
 The VM would be able to optimise them out at run time, for only a small performance hit.
-Unfortunately this is not a route we wish to take on this project, as we do not want the overhead of running on top of a VM, since it means the actor garbage collector already developed would not work.
+Unfortunately, this is not a route we wish to take on this project, as we do not want the overhead of running on top of a VM, since it means the actor garbage collector already developed would not work.
 
 \subsection{C}
 
-Translating Pony code into C, before compiling with GCC/Clang would be very beneficial for a large number of reasons:
+Translating Pony code into C, and then compiling with GCC/Clang would be very beneficial for a large number of reasons:
 \begin{itemize}[noitemsep]
-\item Fast - allowing a C compiler with many years of research to optimise our code would significantly reduce the complexity of the compiler.
-\item Debugging support - the C compiler would be able to emit warnings and errors that the Pony compiler might have missed.
-\item Cross-platform - as long as the C compiler could target the architecture in question, we would be able to compile Pony to that platform.
+	\item Fast - allowing a C compiler with many years of research to optimise our code would significantly reduce the complexity of the compiler.
+	\item Debugging support - the C compiler would be able to emit warnings and errors that the Pony compiler might have missed.
+	\item Cross-platform - as long as the C compiler could target the architecture in question, we would be able to compile Pony to that platform.
 \end{itemize}
 
 However, the debugging support listed as an advantage may not to be very helpful, since this is likely to confuse developers if the "Pony" compiler suddenly starts complaining about error messages in the C code produced.
@@ -533,10 +537,12 @@ LLVM\footnote{Low Level Virtual Machine} is a compiler infrastructure project de
 LLVM consists of various front-ends, which translate different programming languages into LLVM IR\footnote{Intermediate Representation}, along with optimisers and code generators.
 LLVM has many advantages over other, more traditional compilation options:
 \begin{itemize}[noitemsep]
-\item Performance - LLVM can perform many standard optimisations, as well as lower level register allocation optimisations
-\item Cross-platform, LLVM can target almost every major ISA in use today\cite{llvm-svn}, with no front-end changes required (as well as compiling "up" to higher-level languages such as Javascript.)
-\item Debugging support - LLVM intrinsics allow the use of tools such as GDB/LLDB\footnote{GNU Debugger/LLVM Debugger} to step through a currently running program, with source code representations of the software shown.
-\item Ease of use - LLVM has extensive documentation and removes much of the work needed to write a compiler, reducing it to lexing, parsing, type-checking and minimal code generation.
+	\item Performance - LLVM can perform many standard optimisations, as well as lower level register allocation optimisations
+	\item Cross-platform, LLVM can target almost every major ISA in use today\cite{llvm-svn}, with no front-end changes required (as well as compiling "up" to higher-level languages such as Javascript.)
+	\item Debugging support - LLVM intrinsics allow the use of tools such as GDB/LLDB\footnote{GNU Debugger/LLVM Debugger} to step through a currently running program, with source code representations of the software shown.
+	\item Ease of use - LLVM has extensive documentation and removes much of the work needed to write a compiler, reducing it to lexing, parsing, type-checking and minimal code generation.
+	\item C interoperability - LLVM easily allows you to include/call C libraries at link time.
+	\item IR emission - LLVM allows us to simply call library functions, which builds up the the IR before writing to disk, rather than having to emit hand crafted (and potentially buggy) assembler\cite{ibm-llvm}.
 \end{itemize}
 
 \newpage
@@ -549,13 +555,13 @@ In order to garbage collect actors, Pony will break the "no ordering guarantee" 
 
 Pony will be a:
 \begin{itemize}[noitemsep]
-\item high level
-\item imperative
-\item object oriented
-\item functional
-\item single-dispatch
-\item statically-typed
-\item actor-model programming language.
+	\item high level
+	\item imperative
+	\item object oriented
+	\item functional
+	\item single-dispatch
+	\item statically-typed
+	\item actor-model programming language.
 \end{itemize}
 It will be a "pure" object-orientated language in that every value is an object.
 It will be a functional language in that every function is a value, with Algebraic Datatypes as first class members of the language.
@@ -566,10 +572,10 @@ To avoid code duplication, Pony will use Scala-style traits/Ruby-style mixins.
 This means that types are composed\footnote{by mixing in multiple traits} rather than having a type hierarchy.
 Pony will have, built into its type-like system, a system for handling reference modes, which has a sub typing relationship.
 
-The syntax of Pony takes inspiration from languages such as Scala and Lua, with C style bracing and semi-colons.
+The syntax of Pony takes inspiration from languages such as Scala and Lua\cite{lua}, with C style bracing and semi-colons.
 The grammar is still not fixed, with discussions on the language, grammar and semantics still on-going.
 
-In contrast to Erlang and Scala, Pony will run natively, with only a small runtime for the actor-framework and garbage collection, allowing for C library interoperability.
+In contrast to Erlang and Scala, Pony will run natively, with only a small runtime for the actor-framework and garbage collection, with the use of the LLVM backend allowing for C library interoperability.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -585,18 +591,19 @@ In contrast to Erlang and Scala, Pony will run natively, with only a small runti
 \label{fig:simple}
 \end{figure}
 
-This is a sample Pony program which simply prints its arguments, one per line (I/O is handled via the IO actor).
+In figure \ref{fig:simple} a sample Pony program which simply prints its arguments, one per line (I/O is handled via the IO actor).
 In this example several properties of Pony become visible:
-\begin{itemize}
-\item Actors are the base objects for building a system.
-\item A for-comprehension - similar to a $for$ loop in Java, C\# or C, but with
-      a more expressive syntax.
-\item Sending an actor a message is no different to calling a function.
+\begin{itemize}[noitemsep]
+	\item Actors are the base objects for building a system.
+	\item A for-comprehension - similar to a $for$ loop in Java, C\# or C, but with
+		a more expressive syntax.
+	\item Sending an actor a message is no different to calling a function (the io function call is, in fact, sending an actor a message).
 \end{itemize}
 
 \section{Partial Objects}
 
-Partial objects are a unique feature of Pony and are a new concept, used for cloning, stringifying and serialising objects.
+Pony unifies the concepts of cloning and serialisation, which are needed for sending messages to actors, under a single feature called Partial Objects
+They have other uses, such as stringifying an object.
 They are not created by the user, but automatically generated by the compiler.
 For the rest of this paper, I will express a partial object of type $T$ as $\backslash T$
 
@@ -609,8 +616,8 @@ $\> \exists \backslash T.dom(\backslash T\downarrow_{1}) = \{f_{1}^{'}\dots f_{n
 \caption{Formal Representation of Partial Objects}
 \end{figure}
 
-That is, for each field in $T$, the field can be $T_{n}$, $\backslash T_{n}$ (so a partial $T_{n}$) or $undefined$ (the field doesn't exist).
-The potential for this is not immediately obvious, but the advantages for the developer will become apparent later on in this report.
+That is, for each field in $T$, the field can be $T_{n} \wedge \backslash T_{n}$ (so a partial $T_{n}$) $\wedge undefined$ (the field doesn't exist).
+The potential of this is not immediately obvious, but the advantages for the developer will become apparent later on in this report.
 This simple concept can be shown to easily solve problems such as cloning, serialisation and stringability.
 For now we will get a partial object by calling $reflect(pattern)$ where $pattern$ is optional and specifies what fields are to be returned on $this$ (the default being all public fields), which returns a partial object of type $this.type$.
 Reflect returns a mirror\cite{mirror-paper} of the object in question, allowing for meta-properties in the original object to be maintained, such as encapsulation and capabilities.
@@ -639,6 +646,8 @@ In the code above we can see some more of the syntax and ideas of Pony, as well 
 \section{Modal References}
 \label{sec:immutability}
 
+Modal references - mutability enforced by the type system\cite{tschantz2005javari}\cite{zibin2007object}\cite{zibin2010ownership} - can be used to enforce safe concurrency.
+If the language prevents the user from sharing mutable data, the language prevents race conditions.
 A reference can possess one of four qualifiers\cite{microsoft2012}
 
 \begin{itemize}
@@ -647,20 +656,20 @@ A reference can possess one of four qualifiers\cite{microsoft2012}
 	\item Read-only - a read-only reference to an object, allowing for no mutation.
 		There is an additional restriction on read-only values, in that traversing the heap through a read-only reference will only ever produce non-mutable references
 	\item Immutable - a read-only object with a further restriction in that no other references to that object are able to mutate it.
-	\item Unique - an external reference to a cluster of externally unique references, such that there is only one "entrance" reference to the object graph.
+	\item Unique\cite{haller2010capabilities} - an external reference to a cluster of externally unique references, such that there is only one "entrance" reference to the object graph.
 		There is an exception to this, in that if the object graph contains immutable references, the immutable references can be safely referred to.
 \end{itemize}
 
-Each qualifier carries with it a unique set of capabilities (what you can do with the reference in question).
-Capabilities:
+In order to maintain safe concurrency, each qualifier carries with it a unique set of capabilities (what you can do with the reference in question).
+Capabilities are:
 \begin{itemize}[noitemsep]
-	\item readonly - immutable/readonly
-	\item write - mutable/unique
-	\item send - unique
-	\item share - immutable
+	\item immutable/readonly - can read from the reference
+	\item write/unique - mutable/unique - can write to the reference
+	\item unique - can send the reference to another actor (which consumes the reference)
+	\item immutable - can share the reference with multiple actors
 \end{itemize}
 
-The "mode" of a reference (which can be seen as comparable to a file reading mode - read, write etc) dictates what can be done to that object.
+The "mode" of a reference (which can be seen as comparable to a file reading mode - read, write etc) dictates what can be done.
 
 \begin{figure}[H]
 \begin{center}
@@ -683,6 +692,7 @@ However downcasting is not permitted, as this violates capability constraints (d
 
 Pony will provide a simple syntax for describing these modes and will infer the mode of references whenever possible.
 For now the syntax for modes is as follows: readonly - no notation (being the default),  mutable - \textasciitilde (think $\rightsquigarrow$ for heap mutation), immutable - ! and unique - @.
+This is in construct to the Microsoft paper\cite{microsoft2012}, which required  long and ugly code annotations.
 A user can be more verbose and state the mode for clarity, as well as to specify that the mode of a method parameter is the same as another parameter.
 For example the add method of a collection of immutable objects needs to verify that the object being added is also immutable (but the method itself doesn't need to know about the mode).
 
@@ -726,6 +736,14 @@ We can also recover uniqueness from a conversion to mutable/immutable, inside th
 
 This ability is very useful, since it means we can easily parallelise destructive operations on collections of unique objects, as each process can violate the uniqueness constraint, do the operation and return the unique reference.
 
+\section{Additional Information}
+
+There has been an actor runtime written at Imperial College London, which allows for actors to be garbage collected, new actors to be created and scheduled, and messages to be sent between actors.
+This runtime allows us to focus on the programming language side of the project without having to worry about the implementation of the actor-model.
+
+Pony will feature traits\cite{traits} (or mixins\cite{esterbrook2001using}), which encourage code re-use, but avoid the problems associated with multiple inheritance\cite{boyland1996type}.
+Traits can be considered to be an interface with already-implemented methods.
+
 \newpage
 \chapter{Project Plan}
 \label{chapter:project}
@@ -736,18 +754,20 @@ It will also look at the style of code that programmers want to write in the lan
 An investigation into LLVM and the Intermediate Representation it uses will also be necessary.
 
 \section{Design}
-The next step will be to design the Pony language and decide on an initial, concrete syntax for the language (the operational semantics for the language having already been formalised).
+The next step will be to design the full Pony language and decide on an initial, concrete syntax for the language (the operational semantics for the language having already been formalised).
 The specification should comprise a grammar in EBNF, along with a description of the semantics of the language.
+At this point the specification should be considered flexible and open to considerable change.
 
 \section{Implementation}
 The implementation side of the project will consist of several parts once a specification has been formalised.
 
 \begin{enumerate}
 	\item Initial test code in Pony that should be possible to compile.
-	\item A Pony compiler for a small subset of the language written in a native language (such as C++) with error handling for features included
-		\begin{itemize}
-			\item Lexing and Parsing of the full language, which means we can use all of the C++ debugging tools available to us to debug the parser, which will need to be hand-rolled (as there will be no parser generator for Pony).
-				This also means we can easily port the C++ code to Pony and requires no maintenance once implemented
+	\item A Pony compiler for a small subset of the language (Pony-) written in a native language (such as C++) with error handling for features included
+		Lexing and Parsing of the full language, which means we can use all of the C++ debugging tools available to us to debug the parser, which will need to be hand-rolled (as there will be no parser generator for Pony).
+		This also means we can easily port the C++ code to Pony and requires no maintenance once implemented.
+		The features we will include in Pony- are:
+		\begin{itemize}[noitemsep]
 			\item Object oriented features, such as classes, traits and objects.
 			\item Minimal type checking, with no inference
 			\item No partial objects
@@ -801,15 +821,39 @@ If we find we are running out of time, there are several different paths we coul
 	The grammar is LL(1), with no ambiguity, represented as an ANTLR grammar. 
 \item We have written the first stages of the C++ compiler, with a lexer and parser and a useful level of error-reporting.
 	The parser is implemented as a recursive descent parser, with the grammar easily viewable in the parser code.
-\item We have written a semantic analyser, checking the types and building a symbol table of a pony file.
+\item We have written a semantic analyser, checking the types and building a symbol table for a Pony file.
 	There is no implementation of modal references and the type checker currently warns that they are not implemented (since the parser can handle them as part of the grammar).
 \item We have done work towards a standard library, including operations on primitive types, which includes arrays.
 	In the standard library there is also a partial hashmap implementation, as well as a standard linked list.
 \end{itemize}
 
+\section{Timetable}
+
+The dates below are approximations of when we hope to achieve each step.
+
+\begin{enumerate}[noitemsep]
+	\item Finish initial research and investigation - 3rd December
+	\item Initial grammar and semantics - 14th December
+	\item C++ Lexer and Parser - 2nd January
+	\item Pony- type checking - 18th January
+	\item Pony- code generation - 8th February
+	\item Initial Pony compiler - 22nd February
+	\item Modal References - 8th March
+	\item Modal Inference - 22nd March
+	\item Partial Objects - 31st May
+	\item Further Improvements - 14th June
+\end{enumerate}
+
+
 \newpage
 \chapter{Evaluation Plan}
 \label{chapter:evaluation}
+
+\section{Test Suite}
+
+A test suite has started to be created, consisting of code that should and should not compile at each stage of the compiler.
+The current state of these are in Appendix \ref{app:test}.
+These have been useful in evaluating the correctness of the compiler, especially when making small changes to the grammar or semantics of the language.
 
 \section{Best case scenario}
 
@@ -882,7 +926,12 @@ We must also consider how fast the language is, both in terms of development tim
 A variety of programming tasks, both parallel and sequential should be prepared, with clear specifications and the metric above collected.
 These results should be compared to alternative implementations in many different languages, such as C, C++, Scala, Erlang, Haskell, Java, Ruby and Perl.
 
-\bibliographystyle{unsrt}
+\bibliographystyle{plain}
 \bibliography{InterimReport}
+
+\appendix
+\chapter{Test Cases}
+\label{app:test}
+
 
 \end{document}
